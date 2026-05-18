@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistema Expedição Sou Bela</title>
+
+  <style>
+    body{font-family:Arial;margin:0;background:#f5f6fb}
+    .hidden{display:none}
+    .box{padding:20px}
+    .card{background:#fff;padding:20px;border-radius:10px;margin:10px}
+    input,textarea,select{width:100%;padding:10px;margin:5px 0}
+    button{padding:10px 15px;cursor:pointer}
+    .pedido{background:#fff;margin:10px 0;padding:10px;border-radius:10px}
+  </style>
+</head>
+
+<body>
+
+<div id="loginScreen" class="box">
+  <h2>Login</h2>
+
+  <select id="perfilLogin">
+    <option value="dono">Vendas</option>
+    <option value="expedicao">Expedição</option>
+  </select>
+
+  <select id="nomeDono">
+    <option value="Dona Lene">Dona Lene</option>
+    <option value="Fabio">Fabio</option>
+  </select>
+
+  <button onclick="entrar()">Entrar</button>
+</div>
+
+<div id="appDono" class="hidden box">
+  <h2>Vendas</h2>
+
+  <input id="cliente" placeholder="Cliente">
+  <textarea id="pedidoTexto" placeholder="Pedido"></textarea>
+  <textarea id="obsPedido" placeholder="Obs"></textarea>
+
+  <button onclick="enviarPedido()">Enviar</button>
+
+  <div id="listaDono"></div>
+
+  <button onclick="sair()">Sair</button>
+</div>
+
+<div id="appExpedicao" class="hidden box">
+  <h2>Expedição</h2>
+
+  <div id="listaExp"></div>
+
+  <button onclick="sair()">Sair</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  onSnapshot,
+  updateDoc,
+  doc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+// 🔥 SEU FIREBASE
+const firebaseConfig = {
+  apiKey: "AIzaSyAB09oj91RuaytI8AIfFrXc1mYESnGPr9o",
+  authDomain: "sistema-soubela.firebaseapp.com",
+  projectId: "sistema-soubela",
+  storageBucket: "sistema-soubela.firebasestorage.app",
+  messagingSenderId: "625696420183",
+  appId: "1:625696420183:web:7d264c60c9d2fd4cbcce12"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const pedidosRef = collection(db, "pedidos");
+
+let session = null;
+let pedidos = [];
+
+// 🔥 TEMPO REAL
+onSnapshot(pedidosRef, (snap) => {
+  pedidos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  render();
+});
+
+function entrar(){
+  const perfil = document.getElementById("perfilLogin").value;
+
+  if(perfil === "dono"){
+    session = {
+      perfil: "dono",
+      nome: document.getElementById("nomeDono").value
+    };
+  } else {
+    session = { perfil: "expedicao" };
+  }
+
+  render();
+}
+
+function sair(){
+  session = null;
+  render();
+}
+
+async function enviarPedido(){
+  const cliente = document.getElementById("cliente").value;
+  const pedidoTexto = document.getElementById("pedidoTexto").value;
+  const obsPedido = document.getElementById("obsPedido").value;
+
+  await addDoc(pedidosRef, {
+    cliente,
+    pedidoTexto,
+    obsPedido,
+    dono: session.nome,
+    status: "nao-visualizado",
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+
+  document.getElementById("cliente").value = "";
+  document.getElementById("pedidoTexto").value = "";
+  document.getElementById("obsPedido").value = "";
+}
+
+window.mudarStatus = async function(id, status){
+  await updateDoc(doc(db,"pedidos",id),{
+    status,
+    updatedAt: serverTimestamp()
+  });
+};
+
+function render(){
+
+  document.getElementById("loginScreen").classList.toggle("hidden", session);
+
+  document.getElementById("appDono").classList.toggle("hidden",
+    !(session && session.perfil === "dono")
+  );
+
+  document.getElementById("appExpedicao").classList.toggle("hidden",
+    !(session && session.perfil === "expedicao")
+  );
+
+  if(!session) return;
+
+  let html = "";
+
+  pedidos.forEach(p => {
+
+    html += `
+      <div class="pedido">
+        <b>${p.cliente}</b><br>
+        ${p.pedidoTexto}<br>
+        Status: ${p.status || ""}<br>
+    `;
+
+    if(session.perfil === "expedicao"){
+      html += `
+        <button onclick="mudarStatus('${p.id}','visualizado')">Visualizado</button>
+        <button onclick="mudarStatus('${p.id}','em-separacao')">Separação</button>
+        <button onclick="mudarStatus('${p.id}','separado')">Separado</button>
+      `;
+    }
+
+    html += `</div>`;
+  });
+
+  if(session.perfil === "dono"){
+    document.getElementById("listaDono").innerHTML =
+      pedidos.filter(p => p.dono === session.nome).map(p => `
+        <div class="pedido">
+          <b>${p.cliente}</b><br>
+          ${p.pedidoTexto}<br>
+          Status: ${p.status}
+        </div>
+      `).join("");
+  }
+
+  if(session.perfil === "expedicao"){
+    document.getElementById("listaExp").innerHTML = html;
+  }
+}
+
+render();
+</script>
+
+</body>
+</html>
