@@ -1,3 +1,6 @@
+# Substitua TODO o seu `index.html` por este código completo
+
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -103,6 +106,8 @@
     .btn-ghost:hover{background:#e5e7eb}
     .btn-dark{background:#111827; color:#fff;}
     .btn-dark:hover{background:#0b1220}
+    .btn-danger{background:var(--danger); color:#fff;}
+    .btn-danger:hover{filter:brightness(.95)}
     .actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;}
 
     .login-help{
@@ -395,10 +400,7 @@
 
                 <div class="field">
                   <label for="pedidoTexto">Pedido</label>
-                  <textarea id="pedidoTexto" placeholder="Ex:
-001 - reforçado liso
-50 P preto/chocolate
-100 M azul/verde"></textarea>
+                  <textarea id="pedidoTexto" placeholder="Ex:\n001 - reforçado liso\n50 P preto/chocolate\n100 M azul/verde"></textarea>
                 </div>
 
                 <div class="field">
@@ -525,6 +527,7 @@
       collection,
       addDoc,
       updateDoc,
+      deleteDoc,
       doc,
       onSnapshot,
       serverTimestamp
@@ -543,7 +546,7 @@
     const db = getFirestore(app);
     const pedidosRef = collection(db, "pedidos");
 
-    const SESSION_KEY = "sistema_sou_bela_sessao_v7";
+    const SESSION_KEY = "sistema_sou_bela_sessao_v8";
 
     const STATUS = {
       "nao-visualizado": { label: "Não visualizado", cls: "nao-visualizado", chip: "red" },
@@ -735,6 +738,10 @@
 
           <span class="chip ${chipClass(p.status)}" style="margin-top:12px;">${escapeHtml(formatStatus(p.status))}</span>
 
+          <div class="status-actions">
+            <button class="btn btn-danger" onclick="window.excluirPedido('${p.id}', 'dono')">Excluir pedido</button>
+          </div>
+
           <div class="inline-note">
             ${p.status === "separado"
               ? "<strong>Pedido finalizado.</strong>"
@@ -819,6 +826,7 @@
 
               <div class="status-actions">
                 <button class="btn btn-primary" onclick="window.atualizarPedido('${p.id}')">Confirmar seleção</button>
+                ${p.status === "separado" ? `<button class="btn btn-danger" onclick="window.excluirPedido('${p.id}', 'expedicao')">Excluir separado</button>` : ""}
               </div>
             </div>
 
@@ -826,7 +834,7 @@
 
             <div class="inline-note">
               ${statusAtual === "separado"
-                ? "<strong>Pedido finalizado.</strong> Continua aparecendo no histórico."
+                ? "<strong>Pedido finalizado.</strong> Continua aparecendo no histórico até ser excluído." 
                 : "<strong>Pedido pendente.</strong> Só será finalizado quando a expedição marcar como separado."}
             </div>
           </div>
@@ -880,6 +888,47 @@
       } catch (error) {
         console.error("Erro ao atualizar pedido:", error);
         alert("Não foi possível atualizar o pedido.");
+      }
+    };
+
+    window.excluirPedido = async function(id, origem) {
+      try {
+        const pedido = pedidos.find(p => p.id === id);
+        if (!pedido) {
+          alert("Pedido não encontrado.");
+          return;
+        }
+
+        if (origem === "dono") {
+          if (!session || session.perfil !== "dono") {
+            alert("Você precisa estar logado como Vendas.");
+            return;
+          }
+          if (pedido.dono !== session.nome) {
+            alert("Você só pode excluir os seus próprios pedidos.");
+            return;
+          }
+        }
+
+        if (origem === "expedicao") {
+          if (!session || session.perfil !== "expedicao") {
+            alert("Você precisa estar logado como Expedição.");
+            return;
+          }
+          if ((pedido.status || "") !== "separado") {
+            alert("A expedição só pode excluir pedidos que já foram separados.");
+            return;
+          }
+        }
+
+        const ok = confirm("Tem certeza que deseja excluir este pedido?");
+        if (!ok) return;
+
+        await deleteDoc(doc(db, "pedidos", id));
+        alert("Pedido excluído.");
+      } catch (error) {
+        console.error("Erro ao excluir pedido:", error);
+        alert("Não foi possível excluir o pedido.");
       }
     };
 
@@ -987,3 +1036,19 @@
   </script>
 </body>
 </html>
+```
+
+No Firestore, as regras continuam assim para testar:
+
+```js
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
+```
+
+Ficou com exclusão por dono nos próprios pedidos, e exclusão pela expedição só quando o pedido já está separado.
