@@ -1,953 +1,449 @@
+# Substitua TODO o seu `index.html` por este código completo
+
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sistema Expedição Sou Bela</title>
-  <style>
-    :root{
-      --bg:#f5f6fb;
-      --card:#ffffff;
-      --text:#1f2430;
-      --muted:#667085;
-      --line:#e5e7eb;
-      --primary:#d63384;
-      --primary-dark:#b61e6b;
-      --danger:#dc2626;
-      --warning:#d97706;
-      --info:#2563eb;
-      --success:#16a34a;
-      --gray:#6b7280;
-      --shadow:0 18px 40px rgba(31,36,48,.08);
-      --radius:20px;
-    }
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
+  <style>
     body{
       margin:0;
-      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-      background:
-        radial-gradient(circle at top left, rgba(214,51,132,.08), transparent 26%),
-        radial-gradient(circle at top right, rgba(37,99,235,.06), transparent 24%),
-        var(--bg);
-      color:var(--text);
+      font-family:Arial, sans-serif;
+      background:#f5f5f5;
+      color:#222;
     }
 
-    .shell{min-height:100%; padding:24px}
-    .page{max-width:1280px; margin:0 auto; display:flex; flex-direction:column; gap:18px;}
-
-    .hero{
-      background:linear-gradient(135deg, rgba(214,51,132,.11), rgba(37,99,235,.08));
-      border:1px solid rgba(214,51,132,.10);
-      border-radius:28px;
-      padding:22px 24px;
-      box-shadow:var(--shadow);
-      display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    .container{
+      max-width:1200px;
+      margin:auto;
+      padding:20px;
     }
-    .hero h1{margin:0; font-size:clamp(24px, 3vw, 34px);}
-    .hero p{margin:6px 0 0; color:var(--muted); line-height:1.45}
-    .badge{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:8px 12px; border-radius:999px; background:#fff; border:1px solid var(--line);
-      color:var(--muted); font-size:13px; font-weight:700;
-    }
-
-    .grid-login{display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:18px;}
 
     .card{
-      background:var(--card);
-      border:1px solid rgba(229,231,235,.9);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:22px;
+      background:#fff;
+      padding:20px;
+      border-radius:12px;
+      margin-bottom:20px;
+      box-shadow:0 2px 10px rgba(0,0,0,0.08);
     }
 
-    .login-card h2{margin:0 0 8px; font-size:22px;}
-    .sub{margin:0 0 18px; color:var(--muted); line-height:1.5}
+    h1,h2,h3{
+      margin-top:0;
+    }
 
-    .field{display:flex; flex-direction:column; gap:7px; margin-bottom:14px;}
-    .field label{font-size:13px; color:#374151; font-weight:700;}
-
-    input,select,textarea{
+    input, textarea, select {
       width:100%;
-      padding:13px 14px;
-      border:1px solid var(--line);
-      border-radius:14px;
-      outline:none;
-      background:#fff;
-      color:var(--text);
-      transition:.15s ease;
-      font:inherit;
-    }
-    textarea{min-height:100px; resize:vertical}
-    input:focus, select:focus, textarea:focus{
-      border-color:rgba(214,51,132,.45);
-      box-shadow:0 0 0 4px rgba(214,51,132,.10);
+      padding:12px;
+      border:1px solid #ccc;
+      border-radius:8px;
+      margin-top:5px;
+      margin-bottom:15px;
+      box-sizing:border-box;
     }
 
-    .btn{
+    button{
       border:none;
-      border-radius:14px;
       padding:12px 16px;
+      border-radius:8px;
       cursor:pointer;
-      font-weight:800;
-      transition:.15s ease;
-      font-size:14px;
-    }
-    .btn:hover{transform:translateY(-1px)}
-    .btn-primary{background:var(--primary); color:#fff;}
-    .btn-primary:hover{background:var(--primary-dark)}
-    .btn-ghost{background:#f3f4f6; color:#111827;}
-    .btn-ghost:hover{background:#e5e7eb}
-    .btn-dark{background:#111827; color:#fff;}
-    .btn-dark:hover{background:#0b1220}
-    .actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;}
-
-    .login-help{
-      display:grid;
-      gap:10px;
-      margin-top:16px;
-      font-size:13px;
-      color:var(--muted);
-    }
-    .help-line{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      border:1px solid #eef2f7;
-      border-radius:14px;
-      padding:10px 12px;
-      background:#fff;
+      font-weight:bold;
     }
 
-    .app-shell{
-      display:grid;
-      grid-template-columns:280px minmax(0, 1fr);
-      gap:18px;
-      align-items:start;
-    }
-    .sidebar{
-      background:var(--card);
-      border:1px solid rgba(229,231,235,.92);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:18px;
-      position:sticky;
-      top:24px;
-    }
-    .main{
-      background:var(--card);
-      border:1px solid rgba(229,231,235,.92);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:18px;
+    .btn-primary{
+      background:#d63384;
+      color:#fff;
     }
 
-    .sidebar .role{font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em}
-    .sidebar h2{margin:6px 0 2px}
-    .sidebar .who{color:#111827; font-weight:800}
-
-    .section-title{
-      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
-      margin-bottom:14px;
+    .btn-secondary{
+      background:#333;
+      color:#fff;
     }
-    .section-title h3{margin:0; font-size:20px;}
-    .section-title p{margin:4px 0 0; color:var(--muted);}
-
-    .split{
-      display:grid;
-      grid-template-columns:minmax(320px, 1fr) 1.15fr;
-      gap:16px;
-      align-items:start;
-    }
-
-    .stats{
-      display:grid;
-      grid-template-columns:repeat(3, minmax(0, 1fr));
-      gap:12px;
-      margin-bottom:18px;
-    }
-    .stat{
-      border:1px solid var(--line);
-      border-radius:18px;
-      padding:14px;
-      background:linear-gradient(180deg, #fff, #fcfcff);
-    }
-    .stat .label{color:var(--muted); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.3px;}
-    .stat .value{font-size:24px; font-weight:900; margin-top:6px;}
 
     .pedido{
+      border-left:8px solid #ccc;
+      padding:15px;
       background:#fff;
-      border-radius:16px;
-      box-shadow:0 4px 18px rgba(0,0,0,.06);
-      padding:16px;
-      margin-bottom:14px;
-      border-left:8px solid #bbb;
-    }
-    .pedido.nao-visualizado{border-left-color:var(--danger)}
-    .pedido.visualizado{border-left-color:#f0b429}
-    .pedido.em-separacao{border-left-color:var(--info)}
-    .pedido.falta-peca{border-left-color:var(--warning)}
-    .pedido.separado{border-left-color:var(--success)}
-
-    .pedido-head{
-      display:flex;
-      justify-content:space-between;
-      gap:12px;
-      align-items:flex-start;
-      flex-wrap:wrap;
-      margin-bottom:10px;
-    }
-    .pedido-head h3{margin:0}
-    .pedido-meta{
-      font-size:13px;
-      color:var(--muted);
-      line-height:1.5;
-    }
-    .pedido-text{
-      white-space:pre-line;
-      line-height:1.55;
-      background:#fafafa;
-      border:1px solid #eceef3;
-      border-radius:12px;
-      padding:12px;
-      margin-top:10px;
-    }
-    .obsBox{
-      margin-top:12px;
-      background:#fff7e8;
-      border:1px solid #ffe1ad;
-      border-radius:12px;
-      padding:12px;
-      line-height:1.5;
-    }
-    .obsBox strong{display:block;margin-bottom:4px}
-
-    .chip{
-      display:inline-flex; align-items:center; gap:6px;
-      padding:6px 10px; border-radius:999px; font-size:12px; font-weight:800;
-      border:1px solid transparent;
-      white-space:nowrap;
-    }
-    .chip.gray{background:#f3f4f6; color:#374151; border-color:#e5e7eb;}
-    .chip.blue{background:#dbeafe; color:#1d4ed8; border-color:#bfdbfe;}
-    .chip.yellow{background:#fef3c7; color:#92400e; border-color:#fde68a;}
-    .chip.red{background:#fee2e2; color:#991b1b; border-color:#fecaca;}
-    .chip.green{background:#dcfce7; color:#166534; border-color:#bbf7d0;}
-
-    .empty{
-      padding:22px;
-      border:1px dashed #d1d5db;
-      border-radius:18px;
-      color:var(--muted);
-      text-align:center;
-      background:#fafafa;
-      line-height:1.55;
+      border-radius:10px;
+      margin-bottom:15px;
     }
 
-    .note{
-      border-left:4px solid var(--primary);
-      background:#fff7fb;
-      padding:12px 14px;
-      border-radius:12px;
-      margin-top:14px;
-      color:#4a5568;
-      font-size:14px;
-      line-height:1.45;
+    .nao-visualizado{border-left-color:red;}
+    .visualizado{border-left-color:orange;}
+    .em-separacao{border-left-color:blue;}
+    .falta-peca{border-left-color:#b8860b;}
+    .separado{border-left-color:green;}
+
+    .hidden{
+      display:none;
     }
 
-    .filters{
-      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
-      margin-top:8px;
-    }
-    .filters input,.filters select{min-width:180px}
-
-    .status-actions{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      margin-top:12px;
-    }
-
-    .inline-note{
-      margin-top:10px;
-      background:#fff8ef;
-      border:1px dashed #f1c98b;
-      border-radius:12px;
-      padding:10px 12px;
-      color:#734b16;
-      font-size:14px;
-      line-height:1.45;
-    }
-
-    .hidden{display:none !important}
-    .login-shell{max-width:760px; margin:40px auto 0;}
-    .tiny{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45}
-    .text-right{text-align:right}
-
-    .tabbar{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-bottom:14px;
-    }
-    .tabbar .btn{margin-top:0;width:auto;}
-
-    .detail-box{
-      border:1px solid var(--line);
-      border-radius:18px;
-      padding:16px;
-      background:linear-gradient(180deg, #fff, #fcfcff);
-      margin-top:12px;
-    }
-
-    @media (max-width: 980px){
-      .grid-login, .app-shell, .split, .stats{grid-template-columns:1fr}
-      .sidebar{position:static}
+    textarea{
+      min-height:120px;
     }
   </style>
 </head>
 <body>
-  <div class="shell">
-    <div class="page">
-      <div id="loginScreen" class="login-shell">
-        <div class="card">
-          <div class="titleBlock">
-            <h1>Sistema de Pedidos e Expedição</h1>
-            <p class="sub">Escolha a área para entrar. Em Vendas, selecione quem está logando.</p>
-          </div>
 
-          <div class="grid-login">
-            <div class="card login-card" style="box-shadow:none; margin:0; padding:0; border:none;">
-              <h2>Entrar</h2>
-              <p class="sub">Sem senha. Só selecione a área correta.</p>
+<div class="container">
 
-              <div class="field">
-                <label for="perfilLogin">Área</label>
-                <select id="perfilLogin">
-                  <option value="dono">Vendas</option>
-                  <option value="expedicao">Expedição</option>
-                </select>
-              </div>
+  <div id="loginScreen" class="card">
+    <h1>Sistema Expedição Sou Bela</h1>
 
-              <div class="field" id="campoDono">
-                <label for="nomeDono">Quem está entrando em Vendas?</label>
-                <select id="nomeDono">
-                  <option value="Dona Lene">Dona Lene</option>
-                  <option value="Fabio">Fabio</option>
-                </select>
-              </div>
+    <label>Área</label>
+    <select id="perfilLogin">
+      <option value="dono">Vendas</option>
+      <option value="expedicao">Expedição</option>
+    </select>
 
-              <button class="btn btn-primary" id="btnEntrar">Entrar</button>
-
-              <div class="login-help">
-                <div class="help-line"><span>Vendas</span><strong>Dona Lene / Fabio</strong></div>
-                <div class="help-line"><span>Expedição</span><strong>Entrada direta</strong></div>
-              </div>
-            </div>
-
-            <div class="card login-card" style="box-shadow:none; margin:0; padding:0; border:none;">
-              <h2>Como funciona</h2>
-              <p class="sub">Vendas envia os pedidos e vê só os próprios. Expedição marca status e escreve observações.</p>
-              <div class="note">
-                Em qualquer status diferente de <strong>Separado</strong>, a expedição pode deixar observação. Para <strong>Falta peça</strong>, a observação fica obrigatória.
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div id="appDono" class="hidden">
-        <div class="hero">
-          <div>
-            <h1>Painel de Vendas</h1>
-            <p id="nomeSessaoDono"></p>
-          </div>
-          <div class="badge">Área de envio</div>
-        </div>
-
-        <div class="app-shell">
-          <aside class="sidebar">
-            <div class="role">Perfil</div>
-            <h2>Vendas</h2>
-            <div class="who" id="nomeSidebarDono"></div>
-            <p class="tiny">Somente envio de pedidos e consulta dos próprios pedidos.</p>
-            <div class="actions">
-              <button class="btn btn-dark" id="btnSairDono">Sair</button>
-            </div>
-          </aside>
-
-          <main class="main">
-            <div class="section-title">
-              <div>
-                <h3>Novo pedido</h3>
-                <p>Preencha o cliente e os itens que vão para a expedição.</p>
-              </div>
-            </div>
-
-            <div class="split">
-              <section class="card" style="box-shadow:none; margin:0; padding:16px;">
-                <div class="field">
-                  <label for="cliente">Cliente</label>
-                  <input id="cliente" type="text" placeholder="Nome do cliente" />
-                </div>
-
-                <div class="field">
-                  <label for="pedidoTexto">Pedido</label>
-                  <textarea id="pedidoTexto" placeholder="Ex:
-001 - reforçado liso
-50 P preto/chocolate
-100 M azul/verde"></textarea>
-                </div>
-
-                <div class="field">
-                  <label for="obsPedido">Observações do pedido</label>
-                  <textarea id="obsPedido" placeholder="Observações extras, se houver"></textarea>
-                </div>
-
-                <div class="actions">
-                  <button class="btn btn-primary" id="btnEnviarPedido">Enviar pedido</button>
-                  <button class="btn btn-ghost" id="btnExemplo">Preencher exemplo</button>
-                </div>
-              </section>
-
-              <section class="card" style="box-shadow:none; margin:0; padding:16px;">
-                <h3 style="margin-top:0">Resumo</h3>
-                <div class="stats">
-                  <div class="stat">
-                    <span class="label">Meus pedidos</span>
-                    <div class="value" id="statTotalDono">0</div>
-                  </div>
-                  <div class="stat">
-                    <span class="label">Pendentes</span>
-                    <div class="value" id="statPendentesDono">0</div>
-                  </div>
-                  <div class="stat">
-                    <span class="label">Separados</span>
-                    <div class="value" id="statSeparadosDono">0</div>
-                  </div>
-                </div>
-
-                <div class="note">
-                  Aqui aparece só o que foi enviado por <strong id="nomePedidosDono"></strong>.
-                </div>
-              </section>
-            </div>
-
-            <section class="card" style="box-shadow:none; margin-top:16px;">
-              <div class="section-title">
-                <div>
-                  <h3>Meus pedidos</h3>
-                  <p>Pedidos enviados por este usuário.</p>
-                </div>
-              </div>
-              <div id="listaPedidosDono"></div>
-            </section>
-          </main>
-        </div>
-      </div>
-
-      <div id="appExpedicao" class="hidden">
-        <div class="hero">
-          <div>
-            <h1>Painel da Expedição</h1>
-            <p>Marque o status do pedido e confirme a seleção.</p>
-          </div>
-          <div class="badge">Área de separação</div>
-        </div>
-
-        <div class="app-shell">
-          <aside class="sidebar">
-            <div class="role">Perfil</div>
-            <h2>Expedição</h2>
-            <div class="who">Operação</div>
-            <p class="tiny">Somente leitura dos pedidos e atualização de status.</p>
-            <div class="actions">
-              <button class="btn btn-dark" id="btnSairExp">Sair</button>
-            </div>
-            <div class="note">
-              Quando o status for diferente de <strong>Separado</strong>, o pedido fica pendente.
-            </div>
-          </aside>
-
-          <main class="main">
-            <div class="section-title">
-              <div>
-                <h3>Pedidos recebidos</h3>
-                <p>Clique em um pedido para ver os detalhes e mudar o status.</p>
-              </div>
-            </div>
-
-            <div class="tabbar">
-              <button id="btnPendentes" class="btn btn-primary">Pendentes</button>
-              <button id="btnTodos" class="btn btn-ghost">Todos</button>
-            </div>
-
-            <div class="stats">
-              <div class="stat">
-                <span class="label">Total</span>
-                <div class="value" id="statTotalExp">0</div>
-              </div>
-              <div class="stat">
-                <span class="label">Pendentes</span>
-                <div class="value" id="statPendExp">0</div>
-              </div>
-              <div class="stat">
-                <span class="label">Separados</span>
-                <div class="value" id="statSepExp">0</div>
-              </div>
-            </div>
-
-            <div class="filters">
-              <input id="searchExp" placeholder="Buscar pedido, cliente ou modelo..." />
-              <select id="filterStatus">
-                <option value="all">Todos os status</option>
-                <option value="nao-visualizado">Não visualizado</option>
-                <option value="visualizado">Visualizado</option>
-                <option value="em-separacao">Em separação</option>
-                <option value="falta-peca">Falta peça</option>
-                <option value="separado">Separado</option>
-              </select>
-            </div>
-
-            <div style="margin-top:16px" id="listaPedidosExp"></div>
-          </main>
-        </div>
-      </div>
+    <div id="campoDono">
+      <label>Quem está entrando?</label>
+      <select id="nomeDono">
+        <option value="Dona Lene">Dona Lene</option>
+        <option value="Fabio">Fabio</option>
+      </select>
     </div>
+
+    <button class="btn-primary" id="btnEntrar">Entrar</button>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-    import {
-      getFirestore,
-      collection,
-      addDoc,
-      onSnapshot,
-      updateDoc,
-      doc,
-      serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAB09oj91RuaytI8AIfFrXc1mYESnGPr9o",
-      authDomain: "sistema-soubela.firebaseapp.com",
-      projectId: "sistema-soubela",
-      storageBucket: "sistema-soubela.firebasestorage.app",
-      messagingSenderId: "625696420183",
-      appId: "1:625696420183:web:7d264c60c9d2fd4cbcce12"
+  <div id="appDono" class="hidden">
+
+    <div class="card">
+      <h2>Painel de Vendas</h2>
+      <p id="nomeSessao"></p>
+
+      <button class="btn-secondary" id="btnSairDono">Sair</button>
+    </div>
+
+    <div class="card">
+      <h3>Novo Pedido</h3>
+
+      <label>Cliente</label>
+      <input id="cliente" type="text">
+
+      <label>Pedido</label>
+      <textarea id="pedidoTexto"></textarea>
+
+      <label>Observações</label>
+      <textarea id="obsPedido"></textarea>
+
+      <button class="btn-primary" id="btnEnviarPedido">Enviar Pedido</button>
+    </div>
+
+    <div class="card">
+      <h3>Meus Pedidos</h3>
+      <div id="listaPedidosDono"></div>
+    </div>
+
+  </div>
+
+
+  <div id="appExpedicao" class="hidden">
+
+    <div class="card">
+      <h2>Painel Expedição</h2>
+      <button class="btn-secondary" id="btnSairExp">Sair</button>
+    </div>
+
+    <div class="card">
+      <h3>Pedidos</h3>
+      <div id="listaPedidosExp"></div>
+    </div>
+
+  </div>
+
+</div>
+
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  updateDoc,
+  doc,
+  query,
+  orderBy
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAB09oj91RuaytI8AIfFrXc1mYESnGPr9o",
+  authDomain: "sistema-soubela.firebaseapp.com",
+  projectId: "sistema-soubela",
+  storageBucket: "sistema-soubela.firebasestorage.app",
+  messagingSenderId: "625696420183",
+  appId: "1:625696420183:web:7d264c60c9d2fd4cbcce12"
+};
+
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+
+const $ = (id) => document.getElementById(id);
+
+let session = null;
+
+
+function mostrarTela() {
+
+  $("loginScreen").classList.add("hidden");
+  $("appDono").classList.add("hidden");
+  $("appExpedicao").classList.add("hidden");
+
+  if (!session) {
+    $("loginScreen").classList.remove("hidden");
+    return;
+  }
+
+  if (session.perfil === "dono") {
+    $("appDono").classList.remove("hidden");
+    $("nomeSessao").innerText = "Logado como: " + session.nome;
+    carregarPedidosDono();
+  } else {
+    $("appExpedicao").classList.remove("hidden");
+    carregarPedidosExp();
+  }
+}
+
+
+$("perfilLogin").addEventListener("change", () => {
+  if ($("perfilLogin").value === "dono") {
+    $("campoDono").style.display = "block";
+  } else {
+    $("campoDono").style.display = "none";
+  }
+});
+
+
+$("btnEntrar").addEventListener("click", () => {
+
+  const perfil = $("perfilLogin").value;
+
+  if (perfil === "dono") {
+    session = {
+      perfil: "dono",
+      nome: $("nomeDono").value
     };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const pedidosRef = collection(db, "pedidos");
-
-    const SESSION_KEY = "sistema_sou_bela_sessao_v6";
-
-    const STATUS = {
-      "nao-visualizado": { label: "Não visualizado", cls: "nao-visualizado", chip: "red" },
-      "visualizado": { label: "Visualizado", cls: "visualizado", chip: "yellow" },
-      "em-separacao": { label: "Em separação", cls: "em-separacao", chip: "blue" },
-      "falta-peca": { label: "Falta peça", cls: "falta-peca", chip: "yellow" },
-      "separado": { label: "Separado", cls: "separado", chip: "green" }
+  } else {
+    session = {
+      perfil: "expedicao",
+      nome: "Expedição"
     };
+  }
 
-    const $ = (id) => document.getElementById(id);
+  mostrarTela();
+});
 
-    let pedidos = [];
-    let session = loadSession();
-    let filtroExpedicao = "pendentes";
 
-    function loadSession() {
-      try { return JSON.parse(localStorage.getItem(SESSION_KEY)) || null; }
-      catch { return null; }
-    }
+$("btnSairDono").addEventListener("click", () => {
+  session = null;
+  mostrarTela();
+});
 
-    function saveSession() {
-      if (!session) {
-        localStorage.removeItem(SESSION_KEY);
-      } else {
-        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-      }
-    }
 
-    function escapeHtml(str) {
-      return String(str ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
+$("btnSairExp").addEventListener("click", () => {
+  session = null;
+  mostrarTela();
+});
 
-    function formatStatus(status) {
-      return STATUS[status]?.label || status || "";
-    }
 
-    function statusClass(status) {
-      return STATUS[status]?.cls || "nao-visualizado";
-    }
+$("btnEnviarPedido").addEventListener("click", async () => {
 
-    function chipClass(status) {
-      return STATUS[status]?.chip || "gray";
-    }
+  const cliente = $("cliente").value.trim();
+  const pedidoTexto = $("pedidoTexto").value.trim();
+  const obsPedido = $("obsPedido").value.trim();
 
-    function isPending(status) {
-      return status !== "separado";
-    }
+  if (!cliente || !pedidoTexto) {
+    alert("Preencha cliente e pedido.");
+    return;
+  }
 
-    function fmtDate(value) {
-      if (!value) return "-";
-      if (typeof value === "string") return value;
-      if (value && typeof value.toDate === "function") {
-        return value.toDate().toLocaleString("pt-BR");
-      }
-      if (value && typeof value.seconds === "number") {
-        return new Date(value.seconds * 1000).toLocaleString("pt-BR");
-      }
-      if (value instanceof Date) {
-        return value.toLocaleString("pt-BR");
-      }
-      return "-";
-    }
+  try {
 
-    function tsToMs(value) {
-      if (!value) return 0;
-      if (typeof value === "string") {
-        const parsed = Date.parse(value);
-        return Number.isFinite(parsed) ? parsed : 0;
-      }
-      if (typeof value.toMillis === "function") return value.toMillis();
-      if (typeof value.seconds === "number") return value.seconds * 1000;
-      return 0;
-    }
-
-    function renderLogin() {
-      $("loginScreen").classList.remove("hidden");
-      $("appDono").classList.add("hidden");
-      $("appExpedicao").classList.add("hidden");
-    }
-
-    function renderDono() {
-      $("loginScreen").classList.add("hidden");
-      $("appDono").classList.remove("hidden");
-      $("appExpedicao").classList.add("hidden");
-      $("nomeSessaoDono").textContent = `Logado como: ${session.nome}`;
-      $("nomeSidebarDono").textContent = session.nome;
-      $("nomePedidosDono").textContent = session.nome;
-      renderStats();
-      renderPedidosDono();
-    }
-
-    function renderExpedicao() {
-      $("loginScreen").classList.add("hidden");
-      $("appDono").classList.add("hidden");
-      $("appExpedicao").classList.remove("hidden");
-      $("btnPendentes").className = filtroExpedicao === "pendentes" ? "btn btn-primary" : "btn btn-ghost";
-      $("btnTodos").className = filtroExpedicao === "todos" ? "btn btn-primary" : "btn btn-ghost";
-      renderStats();
-      renderPedidosExp();
-    }
-
-    function renderAll() {
-      if (!session) return renderLogin();
-      if (session.perfil === "dono") return renderDono();
-      return renderExpedicao();
-    }
-
-    function renderStats() {
-      if (session?.perfil === "dono") {
-        const meus = pedidos.filter(p => p.dono === session.nome);
-        $("statTotalDono").textContent = meus.length;
-        $("statPendentesDono").textContent = meus.filter(p => isPending(p.status)).length;
-        $("statSeparadosDono").textContent = meus.filter(p => p.status === "separado").length;
-      }
-
-      if (session?.perfil === "expedicao") {
-        $("statTotalExp").textContent = pedidos.length;
-        $("statPendExp").textContent = pedidos.filter(p => isPending(p.status)).length;
-        $("statSepExp").textContent = pedidos.filter(p => p.status === "separado").length;
-      }
-    }
-
-    function renderPedidosDono() {
-      const lista = $("listaPedidosDono");
-      const meusPedidos = pedidos
-        .filter(p => p.dono === session.nome)
-        .sort((a, b) => tsToMs(b.createdAt) - tsToMs(a.createdAt));
-
-      if (!meusPedidos.length) {
-        lista.innerHTML = `<div class="empty">Nenhum pedido enviado ainda por <strong>${escapeHtml(session.nome)}</strong>.</div>`;
-        return;
-      }
-
-      lista.innerHTML = meusPedidos.map(p => `
-        <div class="pedido ${statusClass(p.status)}">
-          <div class="pedido-head">
-            <div>
-              <h3>${escapeHtml(p.cliente || "")}</h3>
-              <div class="pedido-meta"><strong>${escapeHtml(p.id)}</strong> • ${escapeHtml(p.dono || "")}</div>
-            </div>
-            <div class="pedido-meta">
-              <div><strong>Enviado em:</strong> ${escapeHtml(fmtDate(p.createdAt))}</div>
-              <div><strong>Atualizado:</strong> ${escapeHtml(fmtDate(p.updatedAt))}</div>
-            </div>
-          </div>
-
-          <div class="pedido-text">${escapeHtml(p.pedidoTexto || "")}</div>
-
-          ${p.obsPedido ? `<div class="obsBox"><strong>Observação do pedido</strong>${escapeHtml(p.obsPedido).replace(/\n/g, "<br>")}</div>` : ""}
-
-          ${p.expObs ? `<div class="obsBox"><strong>Observação da expedição</strong>${escapeHtml(p.expObs).replace(/\n/g, "<br>")}</div>` : ""}
-
-          <span class="chip ${chipClass(p.status)}" style="margin-top:12px;">${escapeHtml(formatStatus(p.status))}</span>
-
-          <div class="inline-note">
-            ${p.status === "separado"
-              ? "<strong>Pedido finalizado.</strong>"
-              : "<strong>Pedido pendente.</strong> Ainda pode receber ajuste da expedição."}
-          </div>
-        </div>
-      `).join("");
-    }
-
-    function filteredExpeditionOrders() {
-      const busca = ($("searchExp")?.value || "").trim().toLowerCase();
-      const statusFiltro = $("filterStatus")?.value || "all";
-
-      let view = pedidos.slice().sort((a, b) => tsToMs(b.createdAt) - tsToMs(a.createdAt));
-
-      if (filtroExpedicao === "pendentes") {
-        view = view.filter(p => p.status !== "separado");
-      }
-
-      if (statusFiltro !== "all") {
-        view = view.filter(p => p.status === statusFiltro);
-      }
-
-      if (busca) {
-        view = view.filter(p => {
-          const text = [
-            p.id, p.dono, p.cliente, p.pedidoTexto, p.obsPedido, p.expObs, p.status
-          ].map(v => String(v ?? "")).join(" ").toLowerCase();
-          return text.includes(busca);
-        });
-      }
-
-      return view;
-    }
-
-    function renderPedidosExp() {
-      const lista = $("listaPedidosExp");
-      const view = filteredExpeditionOrders();
-
-      if (!view.length) {
-        lista.innerHTML = `<div class="empty">Nenhum pedido encontrado com esses filtros.</div>`;
-        return;
-      }
-
-      lista.innerHTML = view.map(p => {
-        const statusAtual = p.status || "nao-visualizado";
-        const showObs = statusAtual !== "separado";
-        return `
-          <div class="pedido ${statusClass(statusAtual)}">
-            <div class="pedido-head">
-              <div>
-                <h3>${escapeHtml(p.cliente || "")}</h3>
-                <div class="pedido-meta"><strong>${escapeHtml(p.id)}</strong> • ${escapeHtml(p.dono || "")}</div>
-              </div>
-              <div class="pedido-meta">
-                <div><strong>Enviado em:</strong> ${escapeHtml(fmtDate(p.createdAt))}</div>
-                <div><strong>Atualizado:</strong> ${escapeHtml(fmtDate(p.updatedAt))}</div>
-              </div>
-            </div>
-
-            <div class="pedido-text">${escapeHtml(p.pedidoTexto || "")}</div>
-
-            ${p.obsPedido ? `<div class="obsBox"><strong>Observação do pedido</strong>${escapeHtml(p.obsPedido).replace(/\n/g, "<br>")}</div>` : ""}
-
-            <div class="detail-box">
-              <label for="status-${p.id}"><strong>Status do pedido</strong></label>
-              <select id="status-${p.id}" onchange="mostrarCampoObs('${p.id}')">
-                <option value="nao-visualizado" ${statusAtual === "nao-visualizado" ? "selected" : ""}>Não visualizado</option>
-                <option value="visualizado" ${statusAtual === "visualizado" ? "selected" : ""}>Visualizado</option>
-                <option value="em-separacao" ${statusAtual === "em-separacao" ? "selected" : ""}>Em separação</option>
-                <option value="falta-peca" ${statusAtual === "falta-peca" ? "selected" : ""}>Falta peça</option>
-                <option value="separado" ${statusAtual === "separado" ? "selected" : ""}>Separado</option>
-              </select>
-
-              <div id="obsWrap-${p.id}" style="margin-top:12px; ${showObs ? "" : "display:none;"}">
-                <label for="obs-${p.id}"><strong>Observações da expedição</strong></label>
-                <textarea id="obs-${p.id}" placeholder="Escreva o que está faltando, o que precisa ser verificado ou qualquer recado para o dono.">${escapeHtml(p.expObs || "")}</textarea>
-                <div class="tiny">O campo aparece quando o status é diferente de “Separado”.</div>
-              </div>
-
-              <div class="status-actions">
-                <button class="btn btn-primary" onclick="confirmarStatus('${p.id}')">Confirmar seleção</button>
-              </div>
-            </div>
-
-            <span class="chip ${chipClass(statusAtual)}" style="margin-top:12px;">${escapeHtml(formatStatus(statusAtual))}</span>
-
-            <div class="inline-note">
-              ${statusAtual === "separado"
-                ? "<strong>Pedido finalizado.</strong> Continua aparecendo no histórico."
-                : "<strong>Pedido pendente.</strong> Só será finalizado quando a expedição marcar como separado."}
-            </div>
-          </div>
-        `;
-      }).join("");
-    }
-
-    function showLoginFields() {
-      const perfil = $("perfilLogin").value;
-      $("campoDono").style.display = perfil === "dono" ? "block" : "none";
-    }
-
-    window.mostrarCampoObs = function(id) {
-      const sel = document.getElementById(`status-${id}`);
-      const wrap = document.getElementById(`obsWrap-${id}`);
-      if (!sel || !wrap) return;
-      wrap.style.display = sel.value === "separado" ? "none" : "block";
-    };
-
-    window.confirmarStatus = async function(id) {
-      try {
-        const pedido = pedidos.find(p => p.id === id);
-        if (!pedido) {
-          alert("Pedido não encontrado.");
-          return;
-        }
-
-        const sel = document.getElementById(`status-${id}`);
-        const novoStatus = sel ? sel.value : (pedido.status || "nao-visualizado");
-
-        let obs = "";
-        if (novoStatus !== "separado") {
-          const obsEl = document.getElementById(`obs-${id}`);
-          obs = (obsEl?.value || "").trim();
-
-          if (novoStatus === "falta-peca" && !obs) {
-            alert("Preencha a observação para informar o que está faltando.");
-            return;
-          }
-        }
-
-        await updateDoc(doc(db, "pedidos", id), {
-          status: novoStatus,
-          expObs: novoStatus === "separado" ? "" : obs,
-          updatedAt: serverTimestamp()
-        });
-
-        alert("Status confirmado.");
-      } catch (error) {
-        console.error("Erro ao atualizar status:", error);
-        alert("Não foi possível atualizar o status.");
-      }
-    };
-
-    window.entrar = function() {
-      const perfil = $("perfilLogin").value;
-
-      if (perfil === "dono") {
-        const nome = $("nomeDono").value;
-        session = { perfil: "dono", nome };
-        saveSession();
-        renderAll();
-        return;
-      }
-
-      session = { perfil: "expedicao", nome: "Expedição" };
-      saveSession();
-      renderAll();
-    };
-
-    window.sair = function() {
-      session = null;
-      saveSession();
-      renderAll();
-    };
-
-    window.enviarPedido = async function() {
-      try {
-        if (!session || session.perfil !== "dono") {
-          alert("Você precisa estar logado como Vendas.");
-          return;
-        }
-
-        const cliente = $("cliente").value.trim();
-        const pedidoTexto = $("pedidoTexto").value.trim();
-        const obsPedido = $("obsPedido").value.trim();
-
-        if (!cliente || !pedidoTexto) {
-          alert("Preencha o cliente e o pedido.");
-          return;
-        }
-
-        await addDoc(pedidosRef, {
-          dono: session.nome,
-          cliente,
-          pedidoTexto,
-          obsPedido,
-          status: "nao-visualizado",
-          expObs: "",
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
-
-        $("cliente").value = "";
-        $("pedidoTexto").value = "";
-        $("obsPedido").value = "";
-
-        alert("Pedido enviado.");
-      } catch (error) {
-        console.error("Erro ao enviar pedido:", error);
-        alert("Não foi possível enviar o pedido.");
-      }
-    };
-
-    window.preencherExemplo = function() {
-      $("cliente").value = "Loja Exemplo";
-      $("pedidoTexto").value = "001 - reforçado liso\n50 P preto/chocolate\n100 M azul/verde";
-      $("obsPedido").value = "Separar com prioridade.";
-    };
-
-    $("perfilLogin").addEventListener("change", showLoginFields);
-    $("btnEntrar").addEventListener("click", window.entrar);
-    $("btnSairDono").addEventListener("click", window.sair);
-    $("btnSairExp").addEventListener("click", window.sair);
-    $("btnEnviarPedido").addEventListener("click", window.enviarPedido);
-    $("btnExemplo").addEventListener("click", window.preencherExemplo);
-    $("btnPendentes").addEventListener("click", () => { filtroExpedicao = "pendentes"; renderExpedicao(); });
-    $("btnTodos").addEventListener("click", () => { filtroExpedicao = "todos"; renderExpedicao(); });
-    $("searchExp").addEventListener("input", renderPedidosExp);
-    $("filterStatus").addEventListener("change", renderPedidosExp);
-
-    onSnapshot(
-      pedidosRef,
-      (snapshot) => {
-        pedidos = snapshot.docs.map((d) => ({
-          id: d.id,
-          ...d.data()
-        }));
-        renderAll();
-      },
-      (error) => {
-        console.error("Erro no onSnapshot:", error);
-      }
-    );
-
-    window.addEventListener("storage", (e) => {
-      if (e.key === SESSION_KEY) {
-        session = loadSession();
-        renderAll();
-      }
+    await addDoc(collection(db, "pedidos"), {
+      cliente,
+      pedidoTexto,
+      obsPedido,
+      dono: session.nome,
+      status: "nao-visualizado",
+      expObs: "",
+      createdAt: new Date().toLocaleString("pt-BR"),
+      updatedAt: new Date().toLocaleString("pt-BR")
     });
 
-    showLoginFields();
-    renderAll();
-  </script>
+
+    $("cliente").value = "";
+    $("pedidoTexto").value = "";
+    $("obsPedido").value = "";
+
+    alert("Pedido enviado com sucesso.");
+
+    carregarPedidosDono();
+
+  } catch (e) {
+    console.error(e);
+    alert("Erro ao enviar pedido.");
+  }
+});
+
+
+async function carregarPedidosDono() {
+
+  const lista = $("listaPedidosDono");
+
+  const q = query(collection(db, "pedidos"), orderBy("createdAt", "desc"));
+
+  const snapshot = await getDocs(q);
+
+  let html = "";
+
+  snapshot.forEach((docSnap) => {
+
+    const p = docSnap.data();
+
+    if (p.dono !== session.nome) return;
+
+    html += `
+      <div class="pedido ${p.status}">
+        <h3>${p.cliente}</h3>
+        <p><strong>Status:</strong> ${p.status}</p>
+        <pre>${p.pedidoTexto}</pre>
+
+        ${p.obsPedido ? `<p><strong>Obs Pedido:</strong><br>${p.obsPedido}</p>` : ""}
+
+        ${p.expObs ? `<p><strong>Obs Expedição:</strong><br>${p.expObs}</p>` : ""}
+      </div>
+    `;
+  });
+
+  lista.innerHTML = html || "Nenhum pedido.";
+}
+
+
+async function carregarPedidosExp() {
+
+  const lista = $("listaPedidosExp");
+
+  const q = query(collection(db, "pedidos"), orderBy("createdAt", "desc"));
+
+  const snapshot = await getDocs(q);
+
+  let html = "";
+
+  snapshot.forEach((docSnap) => {
+
+    const p = docSnap.data();
+
+    html += `
+      <div class="pedido ${p.status}">
+
+        <h3>${p.cliente}</h3>
+
+        <p><strong>Vendedor:</strong> ${p.dono}</p>
+
+        <pre>${p.pedidoTexto}</pre>
+
+        <select id="status-${docSnap.id}">
+          <option value="nao-visualizado" ${p.status === "nao-visualizado" ? "selected" : ""}>Não visualizado</option>
+          <option value="visualizado" ${p.status === "visualizado" ? "selected" : ""}>Visualizado</option>
+          <option value="em-separacao" ${p.status === "em-separacao" ? "selected" : ""}>Em separação</option>
+          <option value="falta-peca" ${p.status === "falta-peca" ? "selected" : ""}>Falta peça</option>
+          <option value="separado" ${p.status === "separado" ? "selected" : ""}>Separado</option>
+        </select>
+
+        <textarea id="obs-${docSnap.id}" placeholder="Observação">${p.expObs || ""}</textarea>
+
+        <button onclick="window.atualizarPedido('${docSnap.id}')" class="btn-primary">
+          Atualizar
+        </button>
+
+      </div>
+    `;
+  });
+
+  lista.innerHTML = html || "Nenhum pedido.";
+}
+
+
+window.atualizarPedido = async (id) => {
+
+  const status = document.getElementById(`status-${id}`).value;
+  const obs = document.getElementById(`obs-${id}`).value;
+
+  try {
+
+    await updateDoc(doc(db, "pedidos", id), {
+      status,
+      expObs: status === "separado" ? "" : obs,
+      updatedAt: new Date().toLocaleString("pt-BR")
+    });
+
+    alert("Pedido atualizado.");
+
+    carregarPedidosExp();
+
+  } catch (e) {
+    console.error(e);
+    alert("Erro ao atualizar.");
+  }
+};
+
+
+setInterval(() => {
+
+  if (!session) return;
+
+  if (session.perfil === "dono") {
+    carregarPedidosDono();
+  } else {
+    carregarPedidosExp();
+  }
+
+}, 3000);
+
+
+mostrarTela();
+
+</script>
+
 </body>
 </html>
+```
+
+# Depois faça EXATAMENTE isso
+
+1. Apague o index.html antigo.
+2. Cole esse novo.
+3. Salve.
+4. Faça commit no GitHub.
+5. Vá na Vercel.
+6. Clique em Deploy.
+7. Espere terminar.
+8. Abra o site.
+
+# IMPORTANTE NO FIREBASE
+
+No Firestore Rules deixe ASSIM:
+
+```txt
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
+```
+
+Depois clique em Publish.
