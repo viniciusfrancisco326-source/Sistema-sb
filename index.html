@@ -1,95 +1,90 @@
-# Substitua TODO o seu `index.html` por este código completo
-
-```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sistema Expedição Sou Bela</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema Expedição Sou Bela</title>
 
-  <style>
-    body{
-      margin:0;
-      font-family:Arial, sans-serif;
-      background:#f5f5f5;
-      color:#222;
-    }
+<style>
+body{
+  font-family:Arial,sans-serif;
+  background:#f4f4f4;
+  margin:0;
+  padding:20px;
+}
 
-    .container{
-      max-width:1200px;
-      margin:auto;
-      padding:20px;
-    }
+.container{
+  max-width:1200px;
+  margin:auto;
+}
 
-    .card{
-      background:#fff;
-      padding:20px;
-      border-radius:12px;
-      margin-bottom:20px;
-      box-shadow:0 2px 10px rgba(0,0,0,0.08);
-    }
+.card{
+  background:#fff;
+  padding:20px;
+  border-radius:10px;
+  margin-bottom:20px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.1);
+}
 
-    h1,h2,h3{
-      margin-top:0;
-    }
+input,textarea,select{
+  width:100%;
+  padding:10px;
+  margin-top:5px;
+  margin-bottom:15px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  box-sizing:border-box;
+}
 
-    input, textarea, select {
-      width:100%;
-      padding:12px;
-      border:1px solid #ccc;
-      border-radius:8px;
-      margin-top:5px;
-      margin-bottom:15px;
-      box-sizing:border-box;
-    }
+button{
+  padding:12px 18px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:bold;
+}
 
-    button{
-      border:none;
-      padding:12px 16px;
-      border-radius:8px;
-      cursor:pointer;
-      font-weight:bold;
-    }
+.btn-primary{
+  background:#d63384;
+  color:white;
+}
 
-    .btn-primary{
-      background:#d63384;
-      color:#fff;
-    }
+.btn-dark{
+  background:#222;
+  color:white;
+}
 
-    .btn-secondary{
-      background:#333;
-      color:#fff;
-    }
+.hidden{
+  display:none;
+}
 
-    .pedido{
-      border-left:8px solid #ccc;
-      padding:15px;
-      background:#fff;
-      border-radius:10px;
-      margin-bottom:15px;
-    }
+.pedido{
+  border-left:8px solid #ccc;
+  padding:15px;
+  margin-bottom:15px;
+  border-radius:10px;
+  background:white;
+}
 
-    .nao-visualizado{border-left-color:red;}
-    .visualizado{border-left-color:orange;}
-    .em-separacao{border-left-color:blue;}
-    .falta-peca{border-left-color:#b8860b;}
-    .separado{border-left-color:green;}
+.nao-visualizado{border-left-color:red;}
+.visualizado{border-left-color:orange;}
+.em-separacao{border-left-color:blue;}
+.falta-peca{border-left-color:#b8860b;}
+.separado{border-left-color:green;}
 
-    .hidden{
-      display:none;
-    }
-
-    textarea{
-      min-height:120px;
-    }
-  </style>
+pre{
+  white-space:pre-wrap;
+}
+</style>
 </head>
+
 <body>
 
 <div class="container">
 
+  <!-- LOGIN -->
   <div id="loginScreen" class="card">
+
     <h1>Sistema Expedição Sou Bela</h1>
 
     <label>Área</label>
@@ -100,30 +95,38 @@
 
     <div id="campoDono">
       <label>Quem está entrando?</label>
+
       <select id="nomeDono">
         <option value="Dona Lene">Dona Lene</option>
         <option value="Fabio">Fabio</option>
       </select>
     </div>
 
-    <button class="btn-primary" id="btnEntrar">Entrar</button>
+    <button class="btn-primary" id="btnEntrar">
+      Entrar
+    </button>
+
   </div>
 
-
+  <!-- VENDAS -->
   <div id="appDono" class="hidden">
 
     <div class="card">
-      <h2>Painel de Vendas</h2>
+      <h2>Painel Vendas</h2>
+
       <p id="nomeSessao"></p>
 
-      <button class="btn-secondary" id="btnSairDono">Sair</button>
+      <button class="btn-dark" id="btnSairDono">
+        Sair
+      </button>
     </div>
 
     <div class="card">
+
       <h3>Novo Pedido</h3>
 
       <label>Cliente</label>
-      <input id="cliente" type="text">
+      <input type="text" id="cliente">
 
       <label>Pedido</label>
       <textarea id="pedidoTexto"></textarea>
@@ -131,7 +134,10 @@
       <label>Observações</label>
       <textarea id="obsPedido"></textarea>
 
-      <button class="btn-primary" id="btnEnviarPedido">Enviar Pedido</button>
+      <button class="btn-primary" id="btnEnviarPedido">
+        Enviar Pedido
+      </button>
+
     </div>
 
     <div class="card">
@@ -141,12 +147,15 @@
 
   </div>
 
-
+  <!-- EXPEDIÇÃO -->
   <div id="appExpedicao" class="hidden">
 
     <div class="card">
       <h2>Painel Expedição</h2>
-      <button class="btn-secondary" id="btnSairExp">Sair</button>
+
+      <button class="btn-dark" id="btnSairExp">
+        Sair
+      </button>
     </div>
 
     <div class="card">
@@ -158,7 +167,6 @@
 
 </div>
 
-
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -169,9 +177,7 @@ import {
   addDoc,
   getDocs,
   updateDoc,
-  doc,
-  query,
-  orderBy
+  doc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
@@ -184,32 +190,31 @@ const firebaseConfig = {
   appId: "1:625696420183:web:7d264c60c9d2fd4cbcce12"
 };
 
-
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
+const db = getFirestore(app);
 
 const $ = (id) => document.getElementById(id);
 
 let session = null;
 
 
-function mostrarTela() {
+function mostrarTela(){
 
   $("loginScreen").classList.add("hidden");
   $("appDono").classList.add("hidden");
   $("appExpedicao").classList.add("hidden");
 
-  if (!session) {
+  if(!session){
     $("loginScreen").classList.remove("hidden");
     return;
   }
 
-  if (session.perfil === "dono") {
+  if(session.perfil === "dono"){
     $("appDono").classList.remove("hidden");
     $("nomeSessao").innerText = "Logado como: " + session.nome;
     carregarPedidosDono();
-  } else {
+  }else{
     $("appExpedicao").classList.remove("hidden");
     carregarPedidosExp();
   }
@@ -217,11 +222,13 @@ function mostrarTela() {
 
 
 $("perfilLogin").addEventListener("change", () => {
-  if ($("perfilLogin").value === "dono") {
+
+  if($("perfilLogin").value === "dono"){
     $("campoDono").style.display = "block";
-  } else {
+  }else{
     $("campoDono").style.display = "none";
   }
+
 });
 
 
@@ -229,19 +236,24 @@ $("btnEntrar").addEventListener("click", () => {
 
   const perfil = $("perfilLogin").value;
 
-  if (perfil === "dono") {
+  if(perfil === "dono"){
+
     session = {
-      perfil: "dono",
-      nome: $("nomeDono").value
+      perfil:"dono",
+      nome:$("nomeDono").value
     };
-  } else {
+
+  }else{
+
     session = {
-      perfil: "expedicao",
-      nome: "Expedição"
+      perfil:"expedicao",
+      nome:"Expedição"
     };
+
   }
 
   mostrarTela();
+
 });
 
 
@@ -249,7 +261,6 @@ $("btnSairDono").addEventListener("click", () => {
   session = null;
   mostrarTela();
 });
-
 
 $("btnSairExp").addEventListener("click", () => {
   session = null;
@@ -263,88 +274,108 @@ $("btnEnviarPedido").addEventListener("click", async () => {
   const pedidoTexto = $("pedidoTexto").value.trim();
   const obsPedido = $("obsPedido").value.trim();
 
-  if (!cliente || !pedidoTexto) {
-    alert("Preencha cliente e pedido.");
+  if(!cliente || !pedidoTexto){
+    alert("Preencha cliente e pedido");
     return;
   }
 
-  try {
+  try{
 
     await addDoc(collection(db, "pedidos"), {
+
       cliente,
       pedidoTexto,
       obsPedido,
-      dono: session.nome,
-      status: "nao-visualizado",
-      expObs: "",
-      createdAt: new Date().toLocaleString("pt-BR"),
-      updatedAt: new Date().toLocaleString("pt-BR")
-    });
 
+      dono:session.nome,
+
+      status:"nao-visualizado",
+
+      expObs:"",
+
+      createdAt:new Date().toLocaleString("pt-BR")
+
+    });
 
     $("cliente").value = "";
     $("pedidoTexto").value = "";
     $("obsPedido").value = "";
 
-    alert("Pedido enviado com sucesso.");
+    alert("Pedido enviado");
 
     carregarPedidosDono();
 
-  } catch (e) {
+  }catch(e){
+
     console.error(e);
-    alert("Erro ao enviar pedido.");
+
+    alert("Erro ao enviar pedido");
+
   }
+
 });
 
 
-async function carregarPedidosDono() {
+async function carregarPedidosDono(){
 
   const lista = $("listaPedidosDono");
 
-  const q = query(collection(db, "pedidos"), orderBy("createdAt", "desc"));
+  lista.innerHTML = "";
 
-  const snapshot = await getDocs(q);
-
-  let html = "";
+  const snapshot = await getDocs(collection(db, "pedidos"));
 
   snapshot.forEach((docSnap) => {
 
     const p = docSnap.data();
 
-    if (p.dono !== session.nome) return;
+    if(p.dono !== session.nome) return;
 
-    html += `
+    lista.innerHTML += `
       <div class="pedido ${p.status}">
         <h3>${p.cliente}</h3>
+
         <p><strong>Status:</strong> ${p.status}</p>
+
         <pre>${p.pedidoTexto}</pre>
 
-        ${p.obsPedido ? `<p><strong>Obs Pedido:</strong><br>${p.obsPedido}</p>` : ""}
+        ${
+          p.obsPedido
+          ?
+          `<p><strong>Obs:</strong><br>${p.obsPedido}</p>`
+          :
+          ""
+        }
 
-        ${p.expObs ? `<p><strong>Obs Expedição:</strong><br>${p.expObs}</p>` : ""}
+        ${
+          p.expObs
+          ?
+          `<p><strong>Expedição:</strong><br>${p.expObs}</p>`
+          :
+          ""
+        }
+
       </div>
     `;
+
   });
 
-  lista.innerHTML = html || "Nenhum pedido.";
 }
 
 
-async function carregarPedidosExp() {
+async function carregarPedidosExp(){
 
   const lista = $("listaPedidosExp");
 
-  const q = query(collection(db, "pedidos"), orderBy("createdAt", "desc"));
+  lista.innerHTML = "";
 
-  const snapshot = await getDocs(q);
-
-  let html = "";
+  const snapshot = await getDocs(collection(db, "pedidos"));
 
   snapshot.forEach((docSnap) => {
 
     const p = docSnap.data();
 
-    html += `
+    lista.innerHTML += `
+
       <div class="pedido ${p.status}">
 
         <h3>${p.cliente}</h3>
@@ -354,62 +385,75 @@ async function carregarPedidosExp() {
         <pre>${p.pedidoTexto}</pre>
 
         <select id="status-${docSnap.id}">
-          <option value="nao-visualizado" ${p.status === "nao-visualizado" ? "selected" : ""}>Não visualizado</option>
-          <option value="visualizado" ${p.status === "visualizado" ? "selected" : ""}>Visualizado</option>
-          <option value="em-separacao" ${p.status === "em-separacao" ? "selected" : ""}>Em separação</option>
-          <option value="falta-peca" ${p.status === "falta-peca" ? "selected" : ""}>Falta peça</option>
-          <option value="separado" ${p.status === "separado" ? "selected" : ""}>Separado</option>
+
+          <option value="nao-visualizado" ${p.status==="nao-visualizado" ? "selected":""}>
+            Não visualizado
+          </option>
+
+          <option value="visualizado" ${p.status==="visualizado" ? "selected":""}>
+            Visualizado
+          </option>
+
+          <option value="em-separacao" ${p.status==="em-separacao" ? "selected":""}>
+            Em separação
+          </option>
+
+          <option value="falta-peca" ${p.status==="falta-peca" ? "selected":""}>
+            Falta peça
+          </option>
+
+          <option value="separado" ${p.status==="separado" ? "selected":""}>
+            Separado
+          </option>
+
         </select>
 
-        <textarea id="obs-${docSnap.id}" placeholder="Observação">${p.expObs || ""}</textarea>
+        <textarea id="obs-${docSnap.id}">${p.expObs || ""}</textarea>
 
-        <button onclick="window.atualizarPedido('${docSnap.id}')" class="btn-primary">
+        <button
+          class="btn-primary"
+          onclick="window.atualizarPedido('${docSnap.id}')"
+        >
           Atualizar
         </button>
 
       </div>
+
     `;
+
   });
 
-  lista.innerHTML = html || "Nenhum pedido.";
 }
 
 
 window.atualizarPedido = async (id) => {
 
   const status = document.getElementById(`status-${id}`).value;
+
   const obs = document.getElementById(`obs-${id}`).value;
 
-  try {
+  try{
 
     await updateDoc(doc(db, "pedidos", id), {
+
       status,
-      expObs: status === "separado" ? "" : obs,
-      updatedAt: new Date().toLocaleString("pt-BR")
+      expObs:obs
+
     });
 
-    alert("Pedido atualizado.");
+    alert("Pedido atualizado");
 
     carregarPedidosExp();
 
-  } catch (e) {
+  }catch(e){
+
     console.error(e);
-    alert("Erro ao atualizar.");
+
+    alert("Erro ao atualizar");
+
   }
+
 };
-
-
-setInterval(() => {
-
-  if (!session) return;
-
-  if (session.perfil === "dono") {
-    carregarPedidosDono();
-  } else {
-    carregarPedidosExp();
-  }
-
-}, 3000);
 
 
 mostrarTela();
@@ -418,32 +462,3 @@ mostrarTela();
 
 </body>
 </html>
-```
-
-# Depois faça EXATAMENTE isso
-
-1. Apague o index.html antigo.
-2. Cole esse novo.
-3. Salve.
-4. Faça commit no GitHub.
-5. Vá na Vercel.
-6. Clique em Deploy.
-7. Espere terminar.
-8. Abra o site.
-
-# IMPORTANTE NO FIREBASE
-
-No Firestore Rules deixe ASSIM:
-
-```txt
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
-    }
-  }
-}
-```
-
-Depois clique em Publish.
