@@ -1,45 +1,30 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sistema Expedição Sou Bela</title>
- <link rel="icon" type="image/png" href="Sou bela -logo.png">
-  
+  <link rel="icon" type="image/png" href="Sou bela -logo.png">
+
   <style>
     :root{
-      --bg:#f5f6fb;
-      --card:#ffffff;
-      --text:#1f2430;
-      --muted:#667085;
-      --line:#e5e7eb;
-      --primary:#d63384;
-      --primary-dark:#b61e6b;
-      --danger:#dc2626;
-      --warning:#d97706;
-      --info:#2563eb;
-      --success:#16a34a;
-      --gray:#6b7280;
-      --shadow:0 18px 40px rgba(31,36,48,.08);
-      --radius:20px;
+      --bg:#f5f6fb; --card:#fff; --text:#1f2430; --muted:#667085; --line:#e5e7eb;
+      --primary:#d63384; --primary-dark:#b61e6b; --danger:#dc2626; --warning:#d97706;
+      --info:#2563eb; --success:#16a34a; --shadow:0 18px 40px rgba(31,36,48,.08);
+      --radius:18px;
     }
-
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0;
-      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      margin:0; font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
       background:
         radial-gradient(circle at top left, rgba(214,51,132,.08), transparent 26%),
         radial-gradient(circle at top right, rgba(37,99,235,.06), transparent 24%),
         var(--bg);
       color:var(--text);
     }
-
     .shell{min-height:100%; padding:24px}
-    .page{max-width:1280px; margin:0 auto; display:flex; flex-direction:column; gap:18px;}
-
+    .page{max-width:1280px; margin:0 auto; display:flex; flex-direction:column; gap:18px}
     .hero{
       background:linear-gradient(135deg, rgba(214,51,132,.11), rgba(37,99,235,.08));
       border:1px solid rgba(214,51,132,.10);
@@ -48,266 +33,123 @@
       box-shadow:var(--shadow);
       display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
     }
-    .hero h1{margin:0; font-size:clamp(24px, 3vw, 34px);}
+    .hero h1{margin:0; font-size:clamp(24px, 3vw, 34px)}
     .hero p{margin:6px 0 0; color:var(--muted); line-height:1.45}
     .badge{
       display:inline-flex; align-items:center; gap:8px;
       padding:8px 12px; border-radius:999px; background:#fff; border:1px solid var(--line);
       color:var(--muted); font-size:13px; font-weight:700;
     }
-
-    .grid-login{display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:18px;}
-
+    .grid-login{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px}
     .card{
-      background:var(--card);
-      border:1px solid rgba(229,231,235,.9);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:22px;
+      background:var(--card); border:1px solid rgba(229,231,235,.9);
+      border-radius:var(--radius); box-shadow:var(--shadow); padding:22px;
     }
-
-    .login-card h2{margin:0 0 8px; font-size:22px;}
+    .login-card h2{margin:0 0 8px; font-size:22px}
     .sub{margin:0 0 18px; color:var(--muted); line-height:1.5}
-
-    .field{display:flex; flex-direction:column; gap:7px; margin-bottom:14px;}
-    .field label{font-size:13px; color:#374151; font-weight:700;}
-
+    .field{display:flex; flex-direction:column; gap:7px; margin-bottom:14px}
+    .field label{font-size:13px; color:#374151; font-weight:700}
     input,select,textarea{
-      width:100%;
-      padding:13px 14px;
-      border:1px solid var(--line);
-      border-radius:14px;
-      outline:none;
-      background:#fff;
-      color:var(--text);
-      transition:.15s ease;
-      font:inherit;
+      width:100%; padding:13px 14px; border:1px solid var(--line); border-radius:14px; outline:none;
+      background:#fff; color:var(--text); font:inherit; transition:.15s ease;
     }
     textarea{min-height:100px; resize:vertical}
-    input:focus, select:focus, textarea:focus{
-      border-color:rgba(214,51,132,.45);
-      box-shadow:0 0 0 4px rgba(214,51,132,.10);
-    }
-
+    input:focus,select:focus,textarea:focus{border-color:rgba(214,51,132,.45); box-shadow:0 0 0 4px rgba(214,51,132,.10)}
     .btn{
-      border:none;
-      border-radius:14px;
-      padding:12px 16px;
-      cursor:pointer;
-      font-weight:800;
-      transition:.15s ease;
-      font-size:14px;
+      border:none; border-radius:14px; padding:12px 16px; cursor:pointer;
+      font-weight:800; transition:.15s ease; font-size:14px;
     }
     .btn:hover{transform:translateY(-1px)}
-    .btn-primary{background:var(--primary); color:#fff;}
+    .btn-primary{background:var(--primary); color:#fff}
     .btn-primary:hover{background:var(--primary-dark)}
-    .btn-ghost{background:#f3f4f6; color:#111827;}
-    .btn-ghost:hover{background:#e5e7eb}
-    .btn-dark{background:#111827; color:#fff;}
-    .btn-dark:hover{background:#0b1220}
-    .btn-danger{background:var(--danger); color:#fff;}
-    .btn-danger:hover{filter:brightness(.95)}
-    .actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;}
-
-    .login-help{
-      display:grid;
-      gap:10px;
-      margin-top:16px;
-      font-size:13px;
-      color:var(--muted);
-    }
+    .btn-ghost{background:#f3f4f6; color:#111827}
+    .btn-dark{background:#111827; color:#fff}
+    .btn-danger{background:var(--danger); color:#fff}
+    .actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px}
+    .login-help{display:grid; gap:10px; margin-top:16px; font-size:13px; color:var(--muted)}
     .help-line{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      border:1px solid #eef2f7;
-      border-radius:14px;
-      padding:10px 12px;
-      background:#fff;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      border:1px solid #eef2f7; border-radius:14px; padding:10px 12px; background:#fff;
     }
-
-    .app-shell{
-      display:grid;
-      grid-template-columns:280px minmax(0, 1fr);
-      gap:18px;
-      align-items:start;
+    .app-shell{display:grid; grid-template-columns:280px minmax(0,1fr); gap:18px; align-items:start}
+    .sidebar,.main{
+      background:var(--card); border:1px solid rgba(229,231,235,.92); border-radius:var(--radius);
+      box-shadow:var(--shadow); padding:18px;
     }
-    .sidebar{
-      background:var(--card);
-      border:1px solid rgba(229,231,235,.92);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:18px;
-      position:sticky;
-      top:24px;
-    }
-    .main{
-      background:var(--card);
-      border:1px solid rgba(229,231,235,.92);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:18px;
-    }
-
+    .sidebar{position:sticky; top:24px}
     .sidebar .role{font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em}
     .sidebar h2{margin:6px 0 2px}
     .sidebar .who{color:#111827; font-weight:800}
-
-    .section-title{
-      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
-      margin-bottom:14px;
-    }
-    .section-title h3{margin:0; font-size:20px;}
-    .section-title p{margin:4px 0 0; color:var(--muted);}
-
-    .split{
-      display:grid;
-      grid-template-columns:minmax(320px, 1fr) 1.15fr;
-      gap:16px;
-      align-items:start;
-    }
-
-    .stats{
-      display:grid;
-      grid-template-columns:repeat(3, minmax(0, 1fr));
-      gap:12px;
-      margin-bottom:18px;
-    }
-    .stat{
-      border:1px solid var(--line);
-      border-radius:18px;
-      padding:14px;
-      background:linear-gradient(180deg, #fff, #fcfcff);
-    }
-    .stat .label{color:var(--muted); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.3px;}
-    .stat .value{font-size:24px; font-weight:900; margin-top:6px;}
-
+    .section-title{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px}
+    .section-title h3{margin:0; font-size:20px}
+    .section-title p{margin:4px 0 0; color:var(--muted)}
+    .split{display:grid; grid-template-columns:minmax(320px,1fr) 1.15fr; gap:16px; align-items:start}
+    .stats{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-bottom:18px}
+    .stat{border:1px solid var(--line); border-radius:18px; padding:14px; background:linear-gradient(180deg,#fff,#fcfcff)}
+    .stat .label{color:var(--muted); font-size:12px; font-weight:700; text-transform:uppercase}
+    .stat .value{font-size:24px; font-weight:900; margin-top:6px}
     .pedido{
-      background:#fff;
-      border-radius:16px;
-      box-shadow:0 4px 18px rgba(0,0,0,.06);
-      padding:16px;
-      margin-bottom:14px;
-      border-left:8px solid #bbb;
+      background:#fff; border-radius:16px; box-shadow:0 4px 18px rgba(0,0,0,.06);
+      padding:16px; margin-bottom:14px; border-left:8px solid #bbb;
     }
     .pedido.nao-visualizado{border-left-color:var(--danger)}
     .pedido.visualizado{border-left-color:#f0b429}
     .pedido.em-separacao{border-left-color:var(--info)}
     .pedido.falta-peca{border-left-color:var(--warning)}
     .pedido.separado{border-left-color:var(--success)}
-
-    .pedido-head{
-      display:flex;
-      justify-content:space-between;
-      gap:12px;
-      align-items:flex-start;
-      flex-wrap:wrap;
-      margin-bottom:10px;
-    }
+    .pedido-head{display:flex; justify-content:space-between; gap:12px; align-items:flex-start; flex-wrap:wrap; margin-bottom:10px}
     .pedido-head h3{margin:0}
-    .pedido-meta{
-      font-size:13px;
-      color:var(--muted);
-      line-height:1.5;
-    }
+    .pedido-meta{font-size:13px; color:var(--muted); line-height:1.5}
     .pedido-text{
-      white-space:pre-line;
-      line-height:1.55;
-      background:#fafafa;
-      border:1px solid #eceef3;
-      border-radius:12px;
-      padding:12px;
-      margin-top:10px;
+      white-space:pre-line; line-height:1.55; background:#fafafa; border:1px solid #eceef3;
+      border-radius:12px; padding:12px; margin-top:10px;
     }
     .obsBox{
-      margin-top:12px;
-      background:#fff7e8;
-      border:1px solid #ffe1ad;
-      border-radius:12px;
-      padding:12px;
-      line-height:1.5;
+      margin-top:12px; background:#fff7e8; border:1px solid #ffe1ad; border-radius:12px;
+      padding:12px; line-height:1.5;
     }
-    .obsBox strong{display:block;margin-bottom:4px}
-
+    .obsBox strong{display:block; margin-bottom:4px}
     .chip{
-      display:inline-flex; align-items:center; gap:6px;
-      padding:6px 10px; border-radius:999px; font-size:12px; font-weight:800;
-      border:1px solid transparent;
-      white-space:nowrap;
+      display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px;
+      font-size:12px; font-weight:800; border:1px solid transparent; white-space:nowrap;
     }
-    .chip.gray{background:#f3f4f6; color:#374151; border-color:#e5e7eb;}
-    .chip.blue{background:#dbeafe; color:#1d4ed8; border-color:#bfdbfe;}
-    .chip.yellow{background:#fef3c7; color:#92400e; border-color:#fde68a;}
-    .chip.red{background:#fee2e2; color:#991b1b; border-color:#fecaca;}
-    .chip.green{background:#dcfce7; color:#166534; border-color:#bbf7d0;}
-
+    .chip.gray{background:#f3f4f6; color:#374151; border-color:#e5e7eb}
+    .chip.blue{background:#dbeafe; color:#1d4ed8; border-color:#bfdbfe}
+    .chip.yellow{background:#fef3c7; color:#92400e; border-color:#fde68a}
+    .chip.red{background:#fee2e2; color:#991b1b; border-color:#fecaca}
+    .chip.green{background:#dcfce7; color:#166534; border-color:#bbf7d0}
     .empty{
-      padding:22px;
-      border:1px dashed #d1d5db;
-      border-radius:18px;
-      color:var(--muted);
-      text-align:center;
-      background:#fafafa;
-      line-height:1.55;
+      padding:22px; border:1px dashed #d1d5db; border-radius:18px; color:var(--muted);
+      text-align:center; background:#fafafa; line-height:1.55;
     }
-
     .note{
-      border-left:4px solid var(--primary);
-      background:#fff7fb;
-      padding:12px 14px;
-      border-radius:12px;
-      margin-top:14px;
-      color:#4a5568;
-      font-size:14px;
-      line-height:1.45;
+      border-left:4px solid var(--primary); background:#fff7fb; padding:12px 14px; border-radius:12px;
+      margin-top:14px; color:#4a5568; font-size:14px; line-height:1.45;
     }
-
-    .filters{
-      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
-      margin-top:8px;
-    }
+    .filters{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:8px}
     .filters input,.filters select{min-width:180px}
-
-    .status-actions{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      margin-top:12px;
-    }
-
+    .status-actions{display:flex; flex-wrap:wrap; gap:10px; margin-top:12px}
     .inline-note{
-      margin-top:10px;
-      background:#fff8ef;
-      border:1px dashed #f1c98b;
-      border-radius:12px;
-      padding:10px 12px;
-      color:#734b16;
-      font-size:14px;
-      line-height:1.45;
+      margin-top:10px; background:#fff8ef; border:1px dashed #f1c98b; border-radius:12px;
+      padding:10px 12px; color:#734b16; font-size:14px; line-height:1.45;
     }
-
     .hidden{display:none !important}
-    .login-shell{max-width:760px; margin:40px auto 0;}
-    .tiny{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45}
-    .tabbar{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-bottom:14px;
-    }
-    .tabbar .btn{margin-top:0;width:auto;}
-
+    .login-shell{max-width:760px; margin:40px auto 0}
+    .tiny{font-size:12px; color:var(--muted); margin-top:6px; line-height:1.45}
+    .tabbar{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px}
     .detail-box{
-      border:1px solid var(--line);
-      border-radius:18px;
-      padding:16px;
-      background:linear-gradient(180deg, #fff, #fcfcff);
-      margin-top:12px;
+      border:1px solid var(--line); border-radius:18px; padding:16px;
+      background:linear-gradient(180deg,#fff,#fcfcff); margin-top:12px;
     }
-
+    .edit-box{
+      margin-top:12px; border:1px dashed #d1d5db; border-radius:18px; padding:14px; background:#fbfbfd;
+    }
+    .edit-badge{
+      display:inline-flex; align-items:center; gap:6px; margin-top:10px; padding:6px 10px;
+      border-radius:999px; background:#eef2ff; color:#4338ca; font-size:12px; font-weight:800; border:1px solid #c7d2fe;
+    }
     @media (max-width: 980px){
-      .grid-login, .app-shell, .split, .stats{grid-template-columns:1fr}
+      .grid-login,.app-shell,.split,.stats{grid-template-columns:1fr}
       .sidebar{position:static}
     }
   </style>
@@ -315,12 +157,11 @@
 <body>
   <div class="shell">
     <div class="page">
+
       <div id="loginScreen" class="login-shell">
         <div class="card">
-          <div class="titleBlock">
-            <h1>Sistema de Pedidos e Expedição</h1>
-            <p class="sub">Escolha a área para entrar. Em Vendas, selecione quem está logando.</p>
-          </div>
+          <h1>Sistema de Pedidos e Expedição</h1>
+          <p class="sub">Escolha a área para entrar. Em Vendas, selecione quem está logando.</p>
 
           <div class="grid-login">
             <div class="card login-card" style="box-shadow:none; margin:0; padding:0; border:none;">
@@ -344,6 +185,9 @@
               </div>
 
               <button class="btn btn-primary" id="btnEntrar">Entrar</button>
+              <div class="actions">
+                <button class="btn btn-ghost" id="btnAtivarNotificacoesLogin">Ativar notificações</button>
+              </div>
 
               <div class="login-help">
                 <div class="help-line"><span>Vendas</span><strong>Dona Lene / Fabio</strong></div>
@@ -355,7 +199,8 @@
               <h2>Como funciona</h2>
               <p class="sub">Vendas envia os pedidos e vê só os próprios. Expedição marca status e escreve observações.</p>
               <div class="note">
-                Em qualquer status diferente de <strong>Separado</strong>, a expedição pode deixar observação. Para <strong>Falta peça</strong>, a observação fica obrigatória.
+                Em qualquer status diferente de <strong>Separado</strong>, a expedição pode deixar observação.
+                Para <strong>Falta peça</strong>, a observação fica obrigatória.
               </div>
             </div>
           </div>
@@ -379,6 +224,7 @@
             <p class="tiny">Somente envio de pedidos e consulta dos próprios pedidos.</p>
             <div class="actions">
               <button class="btn btn-dark" id="btnSairDono">Sair</button>
+              <button class="btn btn-ghost" id="btnAtivarNotificacoesDono">Ativar notificações</button>
             </div>
           </aside>
 
@@ -399,7 +245,10 @@
 
                 <div class="field">
                   <label for="pedidoTexto">Pedido</label>
-                  <textarea id="pedidoTexto" placeholder="Ex:\n001 - reforçado liso\n50 P preto/chocolate\n100 M azul/verde"></textarea>
+                  <textarea id="pedidoTexto" placeholder="Ex:
+001 - reforçado liso
+50 P preto/chocolate
+100 M azul/verde"></textarea>
                 </div>
 
                 <div class="field">
@@ -409,7 +258,13 @@
 
                 <div class="actions">
                   <button class="btn btn-primary" id="btnEnviarPedido">Enviar pedido</button>
+                  <button class="btn btn-ghost" id="btnCancelarEdicao" style="display:none;">Cancelar edição</button>
                   <button class="btn btn-ghost" id="btnExemplo">Preencher exemplo</button>
+                </div>
+
+                <div id="editStatusBox" class="edit-box hidden">
+                  <strong>Modo de edição ativo</strong>
+                  <div class="tiny" id="editInfo"></div>
                 </div>
               </section>
 
@@ -429,10 +284,7 @@
                     <div class="value" id="statSeparadosDono">0</div>
                   </div>
                 </div>
-
-                <div class="note">
-                  Aqui aparece só o que foi enviado por <strong id="nomePedidosDono"></strong>.
-                </div>
+                <div class="note">Aqui aparece só o que foi enviado por <strong id="nomePedidosDono"></strong>.</div>
               </section>
             </div>
 
@@ -466,6 +318,7 @@
             <p class="tiny">Somente leitura dos pedidos e atualização de status.</p>
             <div class="actions">
               <button class="btn btn-dark" id="btnSairExp">Sair</button>
+              <button class="btn btn-ghost" id="btnAtivarNotificacoesExp">Ativar notificações</button>
             </div>
             <div class="note">
               Quando o status for diferente de <strong>Separado</strong>, o pedido fica pendente.
@@ -486,18 +339,9 @@
             </div>
 
             <div class="stats">
-              <div class="stat">
-                <span class="label">Total</span>
-                <div class="value" id="statTotalExp">0</div>
-              </div>
-              <div class="stat">
-                <span class="label">Pendentes</span>
-                <div class="value" id="statPendExp">0</div>
-              </div>
-              <div class="stat">
-                <span class="label">Separados</span>
-                <div class="value" id="statSepExp">0</div>
-              </div>
+              <div class="stat"><span class="label">Total</span><div class="value" id="statTotalExp">0</div></div>
+              <div class="stat"><span class="label">Pendentes</span><div class="value" id="statPendExp">0</div></div>
+              <div class="stat"><span class="label">Separados</span><div class="value" id="statSepExp">0</div></div>
             </div>
 
             <div class="filters">
@@ -516,21 +360,18 @@
           </main>
         </div>
       </div>
+
     </div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
-      getFirestore,
-      collection,
-      addDoc,
-      updateDoc,
-      deleteDoc,
-      doc,
-      onSnapshot,
-      serverTimestamp
+      getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, serverTimestamp
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import {
+      getMessaging, getToken, onMessage
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAB09oj91RuaytI8AIfFrXc1mYESnGPr9o",
@@ -543,9 +384,12 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const messaging = getMessaging(app);
     const pedidosRef = collection(db, "pedidos");
 
-    const SESSION_KEY = "sistema_sou_bela_sessao_v8";
+    const SESSION_KEY = "sistema_sou_bela_sessao_v10";
+    const FCM_TOKEN_KEY = "sistema_sou_bela_fcm_token_v1";
+    const VAPID_KEY = "BBI6UqpLddFpOVjDHyb29d5qe8xPSXjX38rDRI46ZM6LKS1LZUyjNJYhIl8z0_suwYoYKjQPkmo-l8pGRzqrhwA";
 
     const STATUS = {
       "nao-visualizado": { label: "Não visualizado", cls: "nao-visualizado", chip: "red" },
@@ -560,481 +404,370 @@
     let session = loadSession();
     let pedidos = [];
     let filtroExpedicao = "pendentes";
+    let editandoId = null;
+    let initialized = false;
+    let prevMap = new Map();
+    let fcmToken = localStorage.getItem(FCM_TOKEN_KEY) || "";
 
-    function loadSession() {
-      try {
-        return JSON.parse(localStorage.getItem(SESSION_KEY)) || null;
-      } catch {
-        return null;
-      }
+    function loadSession(){ try { return JSON.parse(localStorage.getItem(SESSION_KEY)) || null; } catch { return null; } }
+    function saveSession(){ session ? localStorage.setItem(SESSION_KEY, JSON.stringify(session)) : localStorage.removeItem(SESSION_KEY); }
+    function fmt(s){ return String(s ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;"); }
+    function statusClass(s){ return STATUS[s]?.cls || "nao-visualizado"; }
+    function chipClass(s){ return STATUS[s]?.chip || "gray"; }
+    function statusLabel(s){ return STATUS[s]?.label || s || ""; }
+    function isPending(s){ return s !== "separado"; }
+    function tsToMs(v){ if(!v) return 0; if(typeof v==="number") return v; if(typeof v==="string"){ const d=Date.parse(v); return Number.isFinite(d)?d:0; } if(typeof v?.toMillis==="function") return v.toMillis(); if(typeof v?.seconds==="number") return v.seconds*1000; return 0; }
+    function nowParts(){ const d=new Date(); return { date:d.toLocaleDateString("pt-BR"), time:d.toLocaleTimeString("pt-BR") }; }
+    function fmtCreated(p){ return p.createdDate && p.createdTime ? `${p.createdDate} às ${p.createdTime}` : (p.createdDate || "-"); }
+    function fmtUpdated(p){ return p.updatedDate && p.updatedTime ? `${p.updatedDate} às ${p.updatedTime}` : (p.updatedDate || "-"); }
+    function notify(title, body){
+      if (Notification.permission === "granted") new Notification(title, { body, icon: "Sou bela -logo.png" });
     }
 
-    function saveSession() {
-      if (!session) {
-        localStorage.removeItem(SESSION_KEY);
-      } else {
-        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-      }
-    }
+    function showLoginFields(){ $("campoDono").style.display = $("perfilLogin").value === "dono" ? "block" : "none"; }
+    function renderLogin(){ $("loginScreen").classList.remove("hidden"); $("appDono").classList.add("hidden"); $("appExpedicao").classList.add("hidden"); }
+    function renderDono(){ $("loginScreen").classList.add("hidden"); $("appDono").classList.remove("hidden"); $("appExpedicao").classList.add("hidden"); $("nomeSessaoDono").textContent = `Logado como: ${session.nome}`; $("nomeSidebarDono").textContent = session.nome; $("nomePedidosDono").textContent = session.nome; renderStats(); renderPedidosDono(); renderEditBox(); }
+    function renderExpedicao(){ $("loginScreen").classList.add("hidden"); $("appDono").classList.add("hidden"); $("appExpedicao").classList.remove("hidden"); $("btnPendentes").className = filtroExpedicao === "pendentes" ? "btn btn-primary" : "btn btn-ghost"; $("btnTodos").className = filtroExpedicao === "todos" ? "btn btn-primary" : "btn btn-ghost"; renderStats(); renderPedidosExp(); }
+    function renderAll(){ if(!session) return renderLogin(); session.perfil === "dono" ? renderDono() : renderExpedicao(); }
 
-    function escapeHtml(str) {
-      return String(str ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-
-    function formatStatus(status) {
-      return STATUS[status]?.label || status || "";
-    }
-
-    function statusClass(status) {
-      return STATUS[status]?.cls || "nao-visualizado";
-    }
-
-    function chipClass(status) {
-      return STATUS[status]?.chip || "gray";
-    }
-
-    function isPending(status) {
-      return status !== "separado";
-    }
-
-    function tsToMs(value) {
-      if (!value) return 0;
-      if (typeof value === "number") return value;
-      if (typeof value === "string") {
-        const parsed = Date.parse(value);
-        return Number.isFinite(parsed) ? parsed : 0;
-      }
-      if (typeof value?.toMillis === "function") return value.toMillis();
-      if (typeof value?.seconds === "number") return value.seconds * 1000;
-      return 0;
-    }
-
-    function formatCreatedDate(p) {
-      if (p.createdDate && p.createdTime) {
-        return `${p.createdDate} às ${p.createdTime}`;
-      }
-      if (p.createdDate) return p.createdDate;
-      if (p.createdAt && typeof p.createdAt.toDate === "function") {
-        return p.createdAt.toDate().toLocaleString("pt-BR");
-      }
-      if (typeof p.createdAt === "string") return p.createdAt;
-      return "-";
-    }
-
-    function formatUpdatedDate(p) {
-      if (p.updatedDate && p.updatedTime) {
-        return `${p.updatedDate} às ${p.updatedTime}`;
-      }
-      if (p.updatedDate) return p.updatedDate;
-      if (p.updatedAt && typeof p.updatedAt.toDate === "function") {
-        return p.updatedAt.toDate().toLocaleString("pt-BR");
-      }
-      if (typeof p.updatedAt === "string") return p.updatedAt;
-      return "-";
-    }
-
-    function nowParts() {
-      const d = new Date();
-      return {
-        date: d.toLocaleDateString("pt-BR"),
-        time: d.toLocaleTimeString("pt-BR")
-      };
-    }
-
-    function showLoginFields() {
-      const perfil = $("perfilLogin").value;
-      $("campoDono").style.display = perfil === "dono" ? "block" : "none";
-    }
-
-    function renderLogin() {
-      $("loginScreen").classList.remove("hidden");
-      $("appDono").classList.add("hidden");
-      $("appExpedicao").classList.add("hidden");
-    }
-
-    function renderDono() {
-      $("loginScreen").classList.add("hidden");
-      $("appDono").classList.remove("hidden");
-      $("appExpedicao").classList.add("hidden");
-      $("nomeSessaoDono").textContent = `Logado como: ${session.nome}`;
-      $("nomeSidebarDono").textContent = session.nome;
-      $("nomePedidosDono").textContent = session.nome;
-      renderStats();
-      renderPedidosDono();
-    }
-
-    function renderExpedicao() {
-      $("loginScreen").classList.add("hidden");
-      $("appDono").classList.add("hidden");
-      $("appExpedicao").classList.remove("hidden");
-      $("btnPendentes").className = filtroExpedicao === "pendentes" ? "btn btn-primary" : "btn btn-ghost";
-      $("btnTodos").className = filtroExpedicao === "todos" ? "btn btn-primary" : "btn btn-ghost";
-      renderStats();
-      renderPedidosExp();
-    }
-
-    function renderAll() {
-      if (!session) {
-        renderLogin();
-        return;
-      }
-      if (session.perfil === "dono") {
-        renderDono();
-        return;
-      }
-      renderExpedicao();
-    }
-
-    function renderStats() {
-      if (session?.perfil === "dono") {
+    function renderStats(){
+      if(session?.perfil === "dono"){
         const meus = pedidos.filter(p => p.dono === session.nome);
         $("statTotalDono").textContent = meus.length;
         $("statPendentesDono").textContent = meus.filter(p => isPending(p.status)).length;
         $("statSeparadosDono").textContent = meus.filter(p => p.status === "separado").length;
       }
-
-      if (session?.perfil === "expedicao") {
+      if(session?.perfil === "expedicao"){
         $("statTotalExp").textContent = pedidos.length;
         $("statPendExp").textContent = pedidos.filter(p => isPending(p.status)).length;
         $("statSepExp").textContent = pedidos.filter(p => p.status === "separado").length;
       }
     }
 
-    function renderPedidosDono() {
+    function renderEditBox(){
+      if(!editandoId){ $("editStatusBox").classList.add("hidden"); return; }
+      const p = pedidos.find(x => x.id === editandoId);
+      if(!p){ clearEditMode(); return; }
+      $("editStatusBox").classList.remove("hidden");
+      $("editInfo").innerHTML = `
+        Editando o pedido <strong>${fmt(p.id)}</strong>.
+        <br>Criado em ${fmt(fmtCreated(p))}.
+        ${p.editedBy ? `<br><span class="edit-badge">Última edição: ${fmt(p.editedBy)} — ${fmt(p.editedDate)} às ${fmt(p.editedTime)}</span>` : ""}
+      `;
+      $("btnEnviarPedido").textContent = "Salvar alterações";
+      $("btnCancelarEdicao").style.display = "inline-flex";
+    }
+
+    function clearEditMode(){
+      editandoId = null;
+      $("btnEnviarPedido").textContent = "Enviar pedido";
+      $("btnCancelarEdicao").style.display = "none";
+      $("editStatusBox").classList.add("hidden");
+      $("editInfo").textContent = "";
+    }
+
+    function renderPedidosDono(){
       const lista = $("listaPedidosDono");
-      const meusPedidos = pedidos
-        .filter(p => p.dono === session.nome)
-        .sort((a, b) => tsToMs(b.createdAtMs) - tsToMs(a.createdAtMs));
-
-      if (!meusPedidos.length) {
-        lista.innerHTML = `<div class="empty">Nenhum pedido enviado ainda por <strong>${escapeHtml(session.nome)}</strong>.</div>`;
-        return;
-      }
-
-      lista.innerHTML = meusPedidos.map(p => `
+      const meus = pedidos.filter(p => p.dono === session.nome).sort((a,b)=>tsToMs(b.createdAtMs)-tsToMs(a.createdAtMs));
+      if(!meus.length) return lista.innerHTML = `<div class="empty">Nenhum pedido enviado ainda por <strong>${fmt(session.nome)}</strong>.</div>`;
+      lista.innerHTML = meus.map(p => `
         <div class="pedido ${statusClass(p.status)}">
           <div class="pedido-head">
             <div>
-              <h3>${escapeHtml(p.cliente || "")}</h3>
-              <div class="pedido-meta"><strong>${escapeHtml(p.id)}</strong> • ${escapeHtml(p.dono || "")}</div>
+              <h3>${fmt(p.cliente || "")}</h3>
+              <div class="pedido-meta"><strong>${fmt(p.id)}</strong> • ${fmt(p.dono || "")}</div>
             </div>
             <div class="pedido-meta">
-              <div><strong>Enviado em:</strong> ${escapeHtml(formatCreatedDate(p))}</div>
-              <div><strong>Atualizado:</strong> ${escapeHtml(formatUpdatedDate(p))}</div>
+              <div><strong>Enviado em:</strong> ${fmt(fmtCreated(p))}</div>
+              <div><strong>Atualizado:</strong> ${fmt(fmtUpdated(p))}</div>
             </div>
           </div>
-
-          <div class="pedido-text">${escapeHtml(p.pedidoTexto || "")}</div>
-
-          ${p.obsPedido ? `<div class="obsBox"><strong>Observação do pedido</strong>${escapeHtml(p.obsPedido).replace(/\n/g, "<br>")}</div>` : ""}
-
-          ${p.expObs ? `<div class="obsBox"><strong>Observação da expedição</strong>${escapeHtml(p.expObs).replace(/\n/g, "<br>")}</div>` : ""}
-
-          <span class="chip ${chipClass(p.status)}" style="margin-top:12px;">${escapeHtml(formatStatus(p.status))}</span>
-
+          <div class="pedido-text">${fmt(p.pedidoTexto || "")}</div>
+          ${p.obsPedido ? `<div class="obsBox"><strong>Observação do pedido</strong>${fmt(p.obsPedido).replace(/\n/g,"<br>")}</div>` : ""}
+          ${p.expObs ? `<div class="obsBox"><strong>Observação da expedição</strong>${fmt(p.expObs).replace(/\n/g,"<br>")}</div>` : ""}
+          ${p.editedBy ? `<div class="obsBox"><strong>Última edição</strong>${fmt(p.editedBy)}<br>${fmt(p.editedDate)} às ${fmt(p.editedTime)}</div>` : ""}
+          <span class="chip ${chipClass(p.status)}" style="margin-top:12px;">${fmt(statusLabel(p.status))}</span>
           <div class="status-actions">
-            <button class="btn btn-danger" onclick="window.excluirPedido('${p.id}', 'dono')">Excluir pedido</button>
+            <button class="btn btn-ghost" onclick="window.editarPedido('${p.id}')">Editar pedido</button>
+            <button class="btn btn-danger" onclick="window.excluirPedido('${p.id}','dono')">Excluir pedido</button>
           </div>
-
-          <div class="inline-note">
-            ${p.status === "separado"
-              ? "<strong>Pedido finalizado.</strong>"
-              : "<strong>Pedido pendente.</strong> Ainda pode receber ajuste da expedição."}
-          </div>
+          <div class="inline-note">${p.status === "separado" ? "<strong>Pedido finalizado.</strong>" : "<strong>Pedido pendente.</strong> Ainda pode receber ajuste da expedição."}</div>
         </div>
       `).join("");
     }
 
-    function filteredExpeditionOrders() {
-      const busca = ($("searchExp")?.value || "").trim().toLowerCase();
-      const statusFiltro = $("filterStatus")?.value || "all";
-
-      let view = pedidos.slice().sort((a, b) => tsToMs(b.createdAtMs) - tsToMs(a.createdAtMs));
-
-      if (filtroExpedicao === "pendentes") {
-        view = view.filter(p => p.status !== "separado");
+    function filteredExpeditionOrders(){
+      const busca = ($("searchExp").value || "").trim().toLowerCase();
+      const statusFiltro = $("filterStatus").value || "all";
+      let view = pedidos.slice().sort((a,b)=>tsToMs(b.createdAtMs)-tsToMs(a.createdAtMs));
+      if(filtroExpedicao === "pendentes") view = view.filter(p => p.status !== "separado");
+      if(statusFiltro !== "all") view = view.filter(p => p.status === statusFiltro);
+      if(busca){
+        view = view.filter(p => [p.id,p.dono,p.cliente,p.pedidoTexto,p.obsPedido,p.expObs,p.status,p.createdDate,p.createdTime,p.updatedDate,p.updatedTime,p.editedBy,p.editedDate,p.editedTime].map(v=>String(v??"")).join(" ").toLowerCase().includes(busca));
       }
-
-      if (statusFiltro !== "all") {
-        view = view.filter(p => p.status === statusFiltro);
-      }
-
-      if (busca) {
-        view = view.filter(p => {
-          const text = [
-            p.id, p.dono, p.cliente, p.pedidoTexto, p.obsPedido, p.expObs, p.status,
-            p.createdDate, p.createdTime, p.updatedDate, p.updatedTime
-          ].map(v => String(v ?? "")).join(" ").toLowerCase();
-          return text.includes(busca);
-        });
-      }
-
       return view;
     }
 
-    function renderPedidosExp() {
+    function renderPedidosExp(){
       const lista = $("listaPedidosExp");
       const view = filteredExpeditionOrders();
-
-      if (!view.length) {
-        lista.innerHTML = `<div class="empty">Nenhum pedido encontrado com esses filtros.</div>`;
-        return;
-      }
-
+      if(!view.length) return lista.innerHTML = `<div class="empty">Nenhum pedido encontrado com esses filtros.</div>`;
       lista.innerHTML = view.map(p => {
-        const statusAtual = p.status || "nao-visualizado";
-        const showObs = statusAtual !== "separado";
-
+        const st = p.status || "nao-visualizado";
         return `
-          <div class="pedido ${statusClass(statusAtual)}">
+          <div class="pedido ${statusClass(st)}">
             <div class="pedido-head">
               <div>
-                <h3>${escapeHtml(p.cliente || "")}</h3>
-                <div class="pedido-meta"><strong>${escapeHtml(p.id)}</strong> • ${escapeHtml(p.dono || "")}</div>
+                <h3>${fmt(p.cliente || "")}</h3>
+                <div class="pedido-meta"><strong>${fmt(p.id)}</strong> • ${fmt(p.dono || "")}</div>
               </div>
               <div class="pedido-meta">
-                <div><strong>Enviado em:</strong> ${escapeHtml(formatCreatedDate(p))}</div>
-                <div><strong>Atualizado:</strong> ${escapeHtml(formatUpdatedDate(p))}</div>
+                <div><strong>Enviado em:</strong> ${fmt(fmtCreated(p))}</div>
+                <div><strong>Atualizado:</strong> ${fmt(fmtUpdated(p))}</div>
               </div>
             </div>
-
-            <div class="pedido-text">${escapeHtml(p.pedidoTexto || "")}</div>
-
-            ${p.obsPedido ? `<div class="obsBox"><strong>Observação do pedido</strong>${escapeHtml(p.obsPedido).replace(/\n/g, "<br>")}</div>` : ""}
-
+            <div class="pedido-text">${fmt(p.pedidoTexto || "")}</div>
+            ${p.obsPedido ? `<div class="obsBox"><strong>Observação do pedido</strong>${fmt(p.obsPedido).replace(/\n/g,"<br>")}</div>` : ""}
+            ${p.editedBy ? `<div class="obsBox"><strong>Última edição</strong>${fmt(p.editedBy)}<br>${fmt(p.editedDate)} às ${fmt(p.editedTime)}</div>` : ""}
             <div class="detail-box">
-              <label for="status-${p.id}"><strong>Status do pedido</strong></label>
-              <select id="status-${p.id}" onchange="mostrarCampoObs('${p.id}')">
-                <option value="nao-visualizado" ${statusAtual === "nao-visualizado" ? "selected" : ""}>Não visualizado</option>
-                <option value="visualizado" ${statusAtual === "visualizado" ? "selected" : ""}>Visualizado</option>
-                <option value="em-separacao" ${statusAtual === "em-separacao" ? "selected" : ""}>Em separação</option>
-                <option value="falta-peca" ${statusAtual === "falta-peca" ? "selected" : ""}>Falta peça</option>
-                <option value="separado" ${statusAtual === "separado" ? "selected" : ""}>Separado</option>
+              <label><strong>Status do pedido</strong></label>
+              <select id="status-${p.id}" onchange="window.mostrarCampoObs('${p.id}')">
+                <option value="nao-visualizado" ${st==="nao-visualizado"?"selected":""}>Não visualizado</option>
+                <option value="visualizado" ${st==="visualizado"?"selected":""}>Visualizado</option>
+                <option value="em-separacao" ${st==="em-separacao"?"selected":""}>Em separação</option>
+                <option value="falta-peca" ${st==="falta-peca"?"selected":""}>Falta peça</option>
+                <option value="separado" ${st==="separado"?"selected":""}>Separado</option>
               </select>
-
-              <div id="obsWrap-${p.id}" style="margin-top:12px; ${showObs ? "" : "display:none;"}">
-                <label for="obs-${p.id}"><strong>Observações da expedição</strong></label>
-                <textarea id="obs-${p.id}" placeholder="Escreva o que está faltando, o que precisa ser verificado ou qualquer recado para o dono.">${escapeHtml(p.expObs || "")}</textarea>
+              <div id="obsWrap-${p.id}" style="margin-top:12px; ${st==="separado"?"display:none;":""}">
+                <label><strong>Observações da expedição</strong></label>
+                <textarea id="obs-${p.id}" placeholder="Escreva o recado para o dono.">${fmt(p.expObs || "")}</textarea>
                 <div class="tiny">O campo aparece quando o status é diferente de “Separado”.</div>
               </div>
-
               <div class="status-actions">
                 <button class="btn btn-primary" onclick="window.atualizarPedido('${p.id}')">Confirmar seleção</button>
-                ${p.status === "separado" ? `<button class="btn btn-danger" onclick="window.excluirPedido('${p.id}', 'expedicao')">Excluir separado</button>` : ""}
+                ${st==="separado" ? `<button class="btn btn-danger" onclick="window.excluirPedido('${p.id}','expedicao')">Excluir separado</button>` : ""}
               </div>
             </div>
-
-            <span class="chip ${chipClass(statusAtual)}" style="margin-top:12px;">${escapeHtml(formatStatus(statusAtual))}</span>
-
-            <div class="inline-note">
-              ${statusAtual === "separado"
-                ? "<strong>Pedido finalizado.</strong> Continua aparecendo no histórico até ser excluído." 
-                : "<strong>Pedido pendente.</strong> Só será finalizado quando a expedição marcar como separado."}
-            </div>
+            <span class="chip ${chipClass(st)}" style="margin-top:12px;">${fmt(statusLabel(st))}</span>
+            <div class="inline-note">${st==="separado" ? "<strong>Pedido finalizado.</strong> Continua aparecendo no histórico até ser excluído." : "<strong>Pedido pendente.</strong> Só será finalizado quando a expedição marcar como separado."}</div>
           </div>
         `;
       }).join("");
     }
 
-    window.mostrarCampoObs = function(id) {
-      const sel = document.getElementById(`status-${id}`);
-      const wrap = document.getElementById(`obsWrap-${id}`);
-      if (!sel || !wrap) return;
-      wrap.style.display = sel.value === "separado" ? "none" : "block";
+    window.mostrarCampoObs = function(id){
+      const sel = document.getElementById(`status-${id}`), wrap = document.getElementById(`obsWrap-${id}`);
+      if(sel && wrap) wrap.style.display = sel.value === "separado" ? "none" : "block";
     };
 
-    window.atualizarPedido = async function(id) {
-      try {
-        if (!session || session.perfil !== "expedicao") {
-          alert("Você precisa estar logado como Expedição.");
-          return;
-        }
-
-        const pedido = pedidos.find(p => p.id === id);
-        if (!pedido) {
-          alert("Pedido não encontrado.");
-          return;
-        }
-
-        const statusEl = document.getElementById(`status-${id}`);
-        const obsEl = document.getElementById(`obs-${id}`);
-
-        const status = statusEl ? statusEl.value : (pedido.status || "nao-visualizado");
-        const obs = obsEl ? obsEl.value.trim() : "";
-
-        if (status === "falta-peca" && !obs) {
-          alert("Preencha a observação para informar o que está faltando.");
-          return;
-        }
-
+    window.atualizarPedido = async function(id){
+      try{
+        if(!session || session.perfil !== "expedicao"){ alert("Você precisa estar logado como Expedição."); return; }
+        const p = pedidos.find(x => x.id === id);
+        if(!p){ alert("Pedido não encontrado."); return; }
+        const st = document.getElementById(`status-${id}`)?.value || p.status || "nao-visualizado";
+        const obs = (document.getElementById(`obs-${id}`)?.value || "").trim();
+        if(st === "falta-peca" && !obs){ alert("Preencha a observação para informar o que está faltando."); return; }
         const now = nowParts();
-
-        await updateDoc(doc(db, "pedidos", id), {
-          status,
-          expObs: status === "separado" ? "" : obs,
+        await updateDoc(doc(db,"pedidos",id), {
+          status: st,
+          expObs: st === "separado" ? "" : obs,
           updatedAt: serverTimestamp(),
           updatedAtMs: Date.now(),
           updatedDate: now.date,
           updatedTime: now.time
         });
-
-        alert("Pedido atualizado.");
-      } catch (error) {
-        console.error("Erro ao atualizar pedido:", error);
-        alert("Não foi possível atualizar o pedido.");
-      }
+      }catch(e){ console.error(e); alert("Não foi possível atualizar o pedido."); }
     };
 
-    window.excluirPedido = async function(id, origem) {
-      try {
-        const pedido = pedidos.find(p => p.id === id);
-        if (!pedido) {
-          alert("Pedido não encontrado.");
-          return;
-        }
-
-        if (origem === "dono") {
-          if (!session || session.perfil !== "dono") {
-            alert("Você precisa estar logado como Vendas.");
-            return;
-          }
-          if (pedido.dono !== session.nome) {
-            alert("Você só pode excluir os seus próprios pedidos.");
-            return;
-          }
-        }
-
-        if (origem === "expedicao") {
-          if (!session || session.perfil !== "expedicao") {
-            alert("Você precisa estar logado como Expedição.");
-            return;
-          }
-          if ((pedido.status || "") !== "separado") {
-            alert("A expedição só pode excluir pedidos que já foram separados.");
-            return;
-          }
-        }
-
-        const ok = confirm("Tem certeza que deseja excluir este pedido?");
-        if (!ok) return;
-
-        await deleteDoc(doc(db, "pedidos", id));
-        alert("Pedido excluído.");
-      } catch (error) {
-        console.error("Erro ao excluir pedido:", error);
-        alert("Não foi possível excluir o pedido.");
-      }
+    window.editarPedido = function(id){
+      const p = pedidos.find(x => x.id === id);
+      if(!session || session.perfil !== "dono"){ alert("Você precisa estar logado como Vendas."); return; }
+      if(!p || p.dono !== session.nome){ alert("Você só pode editar os seus próprios pedidos."); return; }
+      editandoId = id;
+      $("cliente").value = p.cliente || "";
+      $("pedidoTexto").value = p.pedidoTexto || "";
+      $("obsPedido").value = p.obsPedido || "";
+      renderEditBox();
+      $("cliente").focus();
     };
 
-    function entrar() {
-      const perfil = $("perfilLogin").value;
+    window.excluirPedido = async function(id, origem){
+      try{
+        const p = pedidos.find(x => x.id === id);
+        if(!p){ alert("Pedido não encontrado."); return; }
 
-      if (perfil === "dono") {
-        session = {
-          perfil: "dono",
-          nome: $("nomeDono").value
-        };
-      } else {
-        session = {
-          perfil: "expedicao",
-          nome: "Expedição"
-        };
-      }
-
-      saveSession();
-      renderAll();
-    }
-
-    function sair() {
-      session = null;
-      saveSession();
-      renderAll();
-    }
-
-    async function enviarPedido() {
-      try {
-        if (!session || session.perfil !== "dono") {
-          alert("Você precisa estar logado como Vendas.");
-          return;
+        if(origem === "dono"){
+          if(!session || session.perfil !== "dono"){ alert("Você precisa estar logado como Vendas."); return; }
+          if(p.dono !== session.nome){ alert("Você só pode excluir os seus próprios pedidos."); return; }
         }
+
+        if(origem === "expedicao"){
+          if(!session || session.perfil !== "expedicao"){ alert("Você precisa estar logado como Expedição."); return; }
+          if((p.status || "") !== "separado"){ alert("A expedição só pode excluir pedidos que já foram separados."); return; }
+        }
+
+        if(!confirm("Tem certeza que deseja excluir este pedido?")) return;
+        await deleteDoc(doc(db,"pedidos",id));
+        if(editandoId === id) clearEditMode();
+      }catch(e){ console.error(e); alert("Não foi possível excluir o pedido."); }
+    };
+
+    async function ativarNotificacoes(){
+      try{
+        if(!("Notification" in window)){ alert("Seu navegador não suporta notificações."); return; }
+        const perm = await Notification.requestPermission();
+        if(perm !== "granted"){ alert("Permissão de notificação negada."); return; }
+
+        if("serviceWorker" in navigator){
+          try{
+            const reg = await navigator.serviceWorker.register("./firebase-messaging-sw.js");
+            const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
+            if(token){ fcmToken = token; localStorage.setItem(FCM_TOKEN_KEY, token); }
+          }catch(err){ console.warn("FCM local register falhou:", err); }
+        }
+        alert("Notificações ativadas neste navegador.");
+      }catch(err){
+        console.error(err);
+        alert("Não foi possível ativar as notificações.");
+      }
+    }
+
+    onMessage(messaging, (payload) => {
+      const title = payload?.notification?.title || "Atualização do pedido";
+      const body = payload?.notification?.body || "Você recebeu uma atualização.";
+      notify(title, body);
+    });
+
+    $("perfilLogin").addEventListener("change", showLoginFields);
+    $("btnEntrar").addEventListener("click", () => {
+      session = $("perfilLogin").value === "dono"
+        ? { perfil: "dono", nome: $("nomeDono").value }
+        : { perfil: "expedicao", nome: "Expedição" };
+      saveSession();
+      renderAll();
+    });
+    $("btnSairDono").addEventListener("click", () => { session = null; saveSession(); renderAll(); });
+    $("btnSairExp").addEventListener("click", () => { session = null; saveSession(); renderAll(); });
+
+    $("btnEnviarPedido").addEventListener("click", async () => {
+      try{
+        if(!session || session.perfil !== "dono"){ alert("Você precisa estar logado como Vendas."); return; }
 
         const cliente = $("cliente").value.trim();
         const pedidoTexto = $("pedidoTexto").value.trim();
         const obsPedido = $("obsPedido").value.trim();
-
-        if (!cliente || !pedidoTexto) {
-          alert("Preencha o cliente e o pedido.");
-          return;
-        }
+        if(!cliente || !pedidoTexto){ alert("Preencha o cliente e o pedido."); return; }
 
         const now = nowParts();
 
-        await addDoc(pedidosRef, {
-          dono: session.nome,
-          cliente,
-          pedidoTexto,
-          obsPedido,
-          status: "nao-visualizado",
-          expObs: "",
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          createdAtMs: Date.now(),
-          updatedAtMs: Date.now(),
-          createdDate: now.date,
-          createdTime: now.time,
-          updatedDate: now.date,
-          updatedTime: now.time
-        });
+        if(editandoId){
+          const p = pedidos.find(x => x.id === editandoId);
+          if(!p){ alert("Pedido não encontrado."); clearEditMode(); return; }
+          if(p.dono !== session.nome){ alert("Você só pode editar os seus próprios pedidos."); clearEditMode(); return; }
+
+          await updateDoc(doc(db,"pedidos",editandoId), {
+            cliente,
+            pedidoTexto,
+            obsPedido,
+            editedBy: session.nome,
+            editedDate: now.date,
+            editedTime: now.time,
+            editedAtMs: Date.now(),
+            updatedAt: serverTimestamp(),
+            updatedAtMs: Date.now(),
+            updatedDate: now.date,
+            updatedTime: now.time
+          });
+
+          notify("Pedido editado", `Pedido ${p.id} alterado por ${session.nome}.`);
+          clearEditMode();
+        } else {
+          await addDoc(pedidosRef, {
+            dono: session.nome,
+            cliente,
+            pedidoTexto,
+            obsPedido,
+            status: "nao-visualizado",
+            expObs: "",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            createdAtMs: Date.now(),
+            updatedAtMs: Date.now(),
+            createdDate: now.date,
+            createdTime: now.time,
+            updatedDate: now.date,
+            updatedTime: now.time,
+            editedBy: "",
+            editedDate: "",
+            editedTime: "",
+            editedAtMs: 0
+          });
+        }
 
         $("cliente").value = "";
         $("pedidoTexto").value = "";
         $("obsPedido").value = "";
-
-        alert("Pedido enviado.");
-      } catch (error) {
-        console.error("Erro ao enviar pedido:", error);
-        alert("Não foi possível enviar o pedido.");
+      }catch(e){
+        console.error(e);
+        alert(editandoId ? "Não foi possível salvar as alterações." : "Não foi possível enviar o pedido.");
       }
-    }
+    });
 
-    function preencherExemplo() {
+    $("btnCancelarEdicao").addEventListener("click", () => {
+      clearEditMode();
+      $("cliente").value = "";
+      $("pedidoTexto").value = "";
+      $("obsPedido").value = "";
+    });
+    $("btnExemplo").addEventListener("click", () => {
       $("cliente").value = "Loja Exemplo";
       $("pedidoTexto").value = "001 - reforçado liso\n50 P preto/chocolate\n100 M azul/verde";
       $("obsPedido").value = "Separar com prioridade.";
-    }
+    });
 
-    $("perfilLogin").addEventListener("change", showLoginFields);
-    $("btnEntrar").addEventListener("click", entrar);
-    $("btnSairDono").addEventListener("click", sair);
-    $("btnSairExp").addEventListener("click", sair);
-    $("btnEnviarPedido").addEventListener("click", enviarPedido);
-    $("btnExemplo").addEventListener("click", preencherExemplo);
     $("btnPendentes").addEventListener("click", () => { filtroExpedicao = "pendentes"; renderExpedicao(); });
     $("btnTodos").addEventListener("click", () => { filtroExpedicao = "todos"; renderExpedicao(); });
     $("searchExp").addEventListener("input", renderPedidosExp);
     $("filterStatus").addEventListener("change", renderPedidosExp);
 
-    onSnapshot(
-      pedidosRef,
-      (snapshot) => {
-        pedidos = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-        renderAll();
-      },
-      (error) => {
-        console.error("Erro no onSnapshot:", error);
+    $("btnAtivarNotificacoesLogin").addEventListener("click", ativarNotificacoes);
+    $("btnAtivarNotificacoesDono").addEventListener("click", ativarNotificacoes);
+    $("btnAtivarNotificacoesExp").addEventListener("click", ativarNotificacoes);
+
+    onSnapshot(pedidosRef, (snapshot) => {
+      const next = new Map();
+      const changes = snapshot.docChanges().map(c => ({ type:c.type, id:c.doc.id, data:{ id:c.doc.id, ...c.doc.data() } }));
+
+      snapshot.forEach(d => next.set(d.id, { id:d.id, ...d.data() }));
+      pedidos = [...next.values()];
+      renderAll();
+
+      if (initialized) {
+        for (const ch of changes) {
+          const newP = ch.data;
+          const oldP = prevMap.get(ch.id);
+          if (ch.type === "added") {
+            notify("Novo pedido", `${newP.cliente || "Pedido novo"} enviado por ${newP.dono || ""}.`);
+          } else if (ch.type === "modified" && oldP) {
+            const statusChanged = oldP.status !== newP.status;
+            const editChanged = oldP.editedAtMs !== newP.editedAtMs || oldP.pedidoTexto !== newP.pedidoTexto || oldP.obsPedido !== newP.obsPedido;
+            if (statusChanged) {
+              notify("Status atualizado", `${newP.cliente || "Pedido"} agora está: ${statusLabel(newP.status)}.`);
+            } else if (editChanged) {
+              const who = newP.editedBy || "alguém";
+              notify("Pedido editado", `${newP.cliente || "Pedido"} foi alterado por ${who}.`);
+            }
+          }
+        }
       }
-    );
+
+      prevMap = next;
+      initialized = true;
+    });
 
     showLoginFields();
     renderAll();
   </script>
 </body>
 </html>
-
-
-
