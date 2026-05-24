@@ -13,8 +13,11 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage(function(payload) {
-  self.registration.showNotification(payload.notification.title, {
-    body: payload.notification.body,
-    icon: 'Sou bela -logo.png'
-  });
+  self.registration.showNotification(
+    payload.notification?.title || "Atualização do pedido",
+    {
+      body: payload.notification?.body || "Você recebeu uma atualização.",
+      icon: "Sou bela -logo.png"
+    }
+  );
 });
