@@ -6,6 +6,8 @@ import {
   updateDoc,
   deleteDoc,
   doc,
+  getDoc,
+  setDoc,
   onSnapshot,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -28,6 +30,27 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const messaging = getMessaging(app);
 const pedidosRef = collection(db, "pedidos");
+async function salvarTokenUsuario(token) {
+  if (!session) return;
+
+  try {
+    const ref = doc(db, "usuarios", session.nome);
+
+    await setDoc(
+      ref,
+      {
+        nome: session.nome,
+        perfil: session.perfil,
+        token: token
+      },
+      { merge: true }
+    );
+
+    console.log("Token salvo:", session.nome);
+  } catch (e) {
+    console.error("Erro ao salvar token:", e);
+  }
+}
 
 const SESSION_KEY = "sistema_sou_bela_sessao_v13";
 const TOKEN_KEY = "sistema_sou_bela_fcm_token_v1";
@@ -667,7 +690,10 @@ async function ativarNotificacoes() {
           vapidKey: VAPID_KEY,
           serviceWorkerRegistration: reg
         });
-        if (token) localStorage.setItem(TOKEN_KEY, token);
+        if (token) {
+  localStorage.setItem(TOKEN_KEY, token);
+  await salvarTokenUsuario(token);
+}
       } catch (err) {
         console.warn("Erro ao registrar service worker/FCM:", err);
       }
@@ -689,13 +715,21 @@ onMessage(messaging, (payload) => {
 function setupEvents() {
   $("perfilLogin").addEventListener("change", showLoginFields);
 
-  $("btnEntrar").addEventListener("click", () => {
+  $("btnEntrar").addEventListener("click", async () => {
     session = $("perfilLogin").value === "dono"
-      ? { perfil: "dono", nome: $("nomeDono").value }
-      : { perfil: "expedicao", nome: "Expedição" };
-    saveSession();
-    renderAll();
-  });
+    ? { perfil: "dono", nome: $("nomeDono").value }
+    : { perfil: "expedicao", nome: "Expedição" };
+
+  saveSession();
+  renderAll();
+
+  try {
+    await ativarNotificacoes();
+  } catch (e) {
+    console.log(e);
+  }
+
+});
 
   $("btnSairDono").addEventListener("click", () => {
     session = null;
