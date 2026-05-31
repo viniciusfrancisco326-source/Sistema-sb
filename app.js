@@ -230,7 +230,7 @@ function createModelBlock(data = {}, index = 0) {
     </div>
 
     <div class="model-footer">
-      ${index === composerBlocks.length - 1 ? '<button type="button" class="btn btn-ghost add-model-btn">+ Adicionar outro modelo</button>' : ''}
+      ${index === composerBlocks.length - 1 ? '<button type="button" class="btn btn-ghost add-model-btn">+ Adicionar outro modelo</button>' : ""}
     </div>
   `;
   return wrapper;
@@ -255,8 +255,13 @@ function renderPedidoComposer() {
 
   container.innerHTML = composerBlocks.map((data, index) => createModelBlock(data, index).outerHTML).join("");
 
-  container.querySelectorAll(".model-select").forEach(sel => sel.addEventListener("change", syncComposerFromDOM));
-  container.querySelectorAll(".model-notes").forEach(txt => txt.addEventListener("input", syncComposerFromDOM));
+  container.querySelectorAll(".model-select").forEach(sel => {
+    sel.addEventListener("change", syncComposerFromDOM);
+  });
+
+  container.querySelectorAll(".model-notes").forEach(txt => {
+    txt.addEventListener("input", syncComposerFromDOM);
+  });
 }
 
 function formatItemsText(items = []) {
@@ -270,7 +275,9 @@ function htmlItemsText(items = []) {
   return items.map(item => {
     const name = fmt(item.modeloNome || modelLabelByValue(item.modeloCodigo) || item.modeloCodigo || "");
     const desc = fmt((item.descricao || "").trim()).replace(/\n/g, "<br>");
-    return desc ? `<div class="muted-card"><div class="model-tag">${name}</div><div class="model-summary">${desc}</div></div>` : `<div class="muted-card"><div class="model-tag">${name}</div></div>`;
+    return desc
+      ? `<div class="muted-card"><div class="model-tag">${name}</div><div class="model-summary">${desc}</div></div>`
+      : `<div class="muted-card"><div class="model-tag">${name}</div></div>`;
   }).join("");
 }
 function legacyToItems(pedidoTexto) {
@@ -361,6 +368,7 @@ function renderPedidosDono() {
             <span class="chip ${chipClass(p.status)}">${fmt(statusLabel(p.status))}</span>
           </div>
         </div>
+
         <div class="pedido-body open">
           <div class="pedido-body-inner">
             <div class="pedido-grid">
@@ -383,13 +391,16 @@ function renderPedidosDono() {
                   <div class="small-label">Modelos</div>
                   <div class="model-summary">${fmt(formatItemsText(items)).replace(/\n/g, "<br>")}</div>
                 </div>
+
                 ${p.obsPedido ? `<div class="obsBox"><strong>Observação do pedido</strong>${fmt(p.obsPedido).replace(/\n/g, "<br>")}</div>` : ""}
                 ${p.expObs ? `<div class="obsBox"><strong>Observação da expedição</strong>${fmt(p.expObs).replace(/\n/g, "<br>")}</div>` : ""}
                 ${p.editedBy ? `<div class="obsBox"><strong>Última edição</strong>${fmt(p.editedBy)}<br>${fmt(p.editedDate)} às ${fmt(p.editedTime)}</div>` : ""}
+
                 <div class="status-actions">
                   <button class="btn btn-ghost" onclick="window.editarPedido('${p.id}')">Editar pedido</button>
                   <button class="btn btn-danger" onclick="window.excluirPedido('${p.id}', 'dono')">Excluir pedido</button>
                 </div>
+
                 <div class="inline-note">
                   ${p.status === "separado"
                     ? "<strong>Pedido finalizado.</strong>"
@@ -408,6 +419,7 @@ function filteredExpeditionOrders() {
   const busca = ($("searchExp").value || "").trim().toLowerCase();
   const statusFiltro = $("filterStatus").value || "all";
   let view = pedidos.slice().sort((a, b) => tsToMs(b.createdAtMs) - tsToMs(a.createdAtMs));
+
   if (statusFiltro !== "all") view = view.filter(p => p.status === statusFiltro);
   if (busca) view = view.filter(p => orderSearchText(p).includes(busca));
   return view;
@@ -700,11 +712,16 @@ function setupEvents() {
   $("pedidoBlocos").addEventListener("click", (event) => {
     const target = event.target instanceof HTMLElement ? event.target : null;
     if (!target) return;
+
     const add = target.closest(".add-model-btn");
     const remove = target.closest(".remove-model");
+
     if (add) {
       syncComposerFromDOM();
-     composerBlocks.push({ modeloCodigo: "", descricao: "" });
+      composerBlocks.push({
+        modeloCodigo: "001",
+        descricao: ""
+      });
       renderPedidoComposer();
       requestAnimationFrame(() => {
         const last = $("pedidoBlocos").querySelector(".model-block:last-child .model-notes");
@@ -712,29 +729,29 @@ function setupEvents() {
       });
       return;
     }
-   if (remove) {
-  syncComposerFromDOM();
 
-  const bloco = remove.closest(".model-block");
-  const todos = [...document.querySelectorAll("#pedidoBlocos .model-block")];
+    if (remove) {
+      syncComposerFromDOM();
 
-  const index = todos.indexOf(bloco);
+      const bloco = remove.closest(".model-block");
+      const todos = [...document.querySelectorAll("#pedidoBlocos .model-block")];
+      const index = todos.indexOf(bloco);
 
-  if (index > -1) {
-    composerBlocks.splice(index, 1);
-  }
+      if (index > -1) {
+        composerBlocks.splice(index, 1);
+      }
 
-  if (!composerBlocks.length) {
-    composerBlocks = [{
-      modeloCodigo: "001",
-      descricao: ""
-    }];
-  }
+      if (!composerBlocks.length) {
+        composerBlocks = [{
+          modeloCodigo: "001",
+          descricao: ""
+        }];
+      }
 
-  renderPedidoComposer();
-};
+      renderPedidoComposer();
     }
   });
+
   $("pedidoBlocos").addEventListener("input", syncComposerFromDOM);
   $("pedidoBlocos").addEventListener("change", syncComposerFromDOM);
 
@@ -750,13 +767,15 @@ function setupEvents() {
       const cidade = $("cidade").value.trim();
       const obsPedido = $("obsPedido").value.trim();
       syncComposerFromDOM();
-     const items = composerBlocks
-   .filter(item => item.modeloCodigo)
-   .map(item => ({
-     modeloCodigo: item.modeloCodigo,
-     modeloNome: modelLabelByValue(item.modeloCodigo),
-     descricao: (item.descricao || "").trim()
-    }));
+
+      const items = composerBlocks
+        .filter(item => item.modeloCodigo)
+        .map(item => ({
+          modeloCodigo: item.modeloCodigo,
+          modeloNome: modelLabelByValue(item.modeloCodigo),
+          descricao: (item.descricao || "").trim()
+        }));
+
       if (!cliente || !estado || !cidade) {
         alert("Preencha o cliente, o estado e a cidade.");
         return;
