@@ -2,7 +2,7 @@ importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-  apiKey: "AIzaSyAB09oj91RuaytI8AIfFrXc1mYESnGPr9o",
+  apiKey: "AIzaSyAB09oj91RuaytI8AIFFrXc1mYESnGPr9o",
   authDomain: "sistema-soubela.firebaseapp.com",
   projectId: "sistema-soubela",
   storageBucket: "sistema-soubela.firebasestorage.app",
@@ -17,7 +17,7 @@ messaging.onBackgroundMessage(function(payload) {
     payload.notification?.title || "Atualização do pedido",
     {
       body: payload.notification?.body || "Você recebeu uma atualização.",
-      icon: "Sou bela -logo.png"
+      icon: "Sou Bela -logo (3).png"
     }
   );
 });
