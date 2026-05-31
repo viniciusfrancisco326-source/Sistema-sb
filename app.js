@@ -62,21 +62,19 @@ const $ = (id) => document.getElementById(id);
 let session = loadSession();
 let pedidos = [];
 let editandoId = null;
-let filtroExpedicao = "pendentes";
 let initialized = false;
 let prevMap = new Map();
 let expandedOrders = new Set();
-let modelBlockCounter = 0;
+let composerBlocks = [{ modeloCodigo: "001", descricao: "" }];
+let composerCounter = 0;
 
 function loadSession() {
   try { return JSON.parse(localStorage.getItem(SESSION_KEY)) || null; } catch { return null; }
 }
-
 function saveSession() {
   if (!session) localStorage.removeItem(SESSION_KEY);
   else localStorage.setItem(SESSION_KEY, JSON.stringify(session));
 }
-
 function fmt(str) {
   return String(str ?? "")
     .replaceAll("&", "&amp;")
@@ -85,13 +83,11 @@ function fmt(str) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
-
 function statusClass(s) { return STATUS[s]?.cls || "nao-visualizado"; }
 function chipClass(s) { return STATUS[s]?.chip || "gray"; }
 function statusLabel(s) { return STATUS[s]?.label || s || ""; }
 function isPending(s) { return s !== "separado"; }
 function isCollapsedStatus(s) { return s === "separado"; }
-
 function tsToMs(v) {
   if (!v) return 0;
   if (typeof v === "number") return v;
@@ -103,7 +99,6 @@ function tsToMs(v) {
   if (typeof v?.seconds === "number") return v.seconds * 1000;
   return 0;
 }
-
 function nowParts() {
   const d = new Date();
   return {
@@ -111,31 +106,28 @@ function nowParts() {
     time: d.toLocaleTimeString("pt-BR")
   };
 }
-
 function fmtCreated(p) {
   return p.createdDate && p.createdTime ? `${p.createdDate} às ${p.createdTime}` : (p.createdDate || "-");
 }
-
 function fmtUpdated(p) {
   return p.updatedDate && p.updatedTime ? `${p.updatedDate} às ${p.updatedTime}` : (p.updatedDate || "-");
 }
-
 function notify(title, body) {
   if (Notification.permission === "granted") {
-    new Notification(title, { body, icon: "Sou Bela -logo (3).png" });
+    try { new Notification(title, { body, icon: "Sou Bela -logo (3).png" }); } catch {}
   }
 }
 
 function showLoginFields() {
-  $("campoDono").style.display = $("perfilLogin").value === "dono" ? "block" : "none";
+  const el = $("campoDono");
+  if (!el) return;
+  el.style.display = $("perfilLogin")?.value === "dono" ? "block" : "none";
 }
-
 function renderLogin() {
   $("loginScreen").classList.remove("hidden");
   $("appDono").classList.add("hidden");
   $("appExpedicao").classList.add("hidden");
 }
-
 function renderDono() {
   $("loginScreen").classList.add("hidden");
   $("appDono").classList.remove("hidden");
@@ -146,24 +138,21 @@ function renderDono() {
   renderStats();
   renderPedidosDono();
   renderEditBox();
+  if (!composerBlocks.length) composerBlocks = [{ modeloCodigo: "001", descricao: "" }];
+  renderPedidoComposer();
 }
-
 function renderExpedicao() {
   $("loginScreen").classList.add("hidden");
   $("appDono").classList.add("hidden");
   $("appExpedicao").classList.remove("hidden");
-  $("btnPendentes").className = filtroExpedicao === "pendentes" ? "btn btn-primary" : "btn btn-ghost";
-  $("btnTodos").className = filtroExpedicao === "todos" ? "btn btn-primary" : "btn btn-ghost";
   renderStats();
   renderPedidosExp();
 }
-
 function renderAll() {
   if (!session) return renderLogin();
   if (session.perfil === "dono") return renderDono();
   return renderExpedicao();
 }
-
 function renderStats() {
   if (session?.perfil === "dono") {
     const meus = pedidos.filter(p => p.dono === session.nome);
@@ -177,7 +166,6 @@ function renderStats() {
     $("statSepExp").textContent = pedidos.filter(p => p.status === "separado").length;
   }
 }
-
 function clearEditMode() {
   editandoId = null;
   $("btnEnviarPedido").textContent = "Enviar pedido";
@@ -185,7 +173,6 @@ function clearEditMode() {
   $("editStatusBox").classList.add("hidden");
   $("editInfo").textContent = "";
 }
-
 function renderEditBox() {
   if (!editandoId) {
     $("editStatusBox").classList.add("hidden");
@@ -208,30 +195,23 @@ function renderEditBox() {
 function modelLabelByValue(value) {
   return MODEL_OPTIONS.find(m => m.value === value)?.label || value || "";
 }
-
-function modelGroupByValue(value) {
-  return MODEL_OPTIONS.find(m => m.value === value)?.group || "";
-}
-
 function renderModelSelect(selected = "001") {
   const groups = {};
   for (const model of MODEL_OPTIONS) {
     if (!groups[model.group]) groups[model.group] = [];
     groups[model.group].push(model);
   }
-  const options = Object.entries(groups).map(([groupName, items]) => `
+  return Object.entries(groups).map(([groupName, items]) => `
     <optgroup label="${fmt(groupName)}">
       ${items.map(model => `<option value="${fmt(model.value)}" ${model.value === selected ? "selected" : ""}>${fmt(model.label)}</option>`).join("")}
     </optgroup>
   `).join("");
-  return options;
 }
 
-function createModelBlock(data = {}) {
-  const id = `model-block-${++modelBlockCounter}`;
+function createModelBlock(data = {}, index = 0) {
   const wrapper = document.createElement("div");
   wrapper.className = "model-block";
-  wrapper.dataset.blockId = id;
+  wrapper.dataset.blockId = `model-block-${++composerCounter}`;
   wrapper.innerHTML = `
     <div class="model-block-head">
       <div class="field" style="flex:1">
@@ -240,7 +220,7 @@ function createModelBlock(data = {}) {
           ${renderModelSelect(data.modeloCodigo || "001")}
         </select>
       </div>
-      <button type="button" class="remove-model ${data.__first ? "hidden" : ""}">Remover</button>
+      <button type="button" class="remove-model ${composerBlocks.length === 1 ? "hidden" : ""}">Remover</button>
     </div>
 
     <div class="field">
@@ -249,82 +229,54 @@ function createModelBlock(data = {}) {
     </div>
 
     <div class="model-footer">
-      <button type="button" class="btn btn-ghost add-model-btn">+ Adicionar outro modelo</button>
+      ${index === composerBlocks.length - 1 ? '<button type="button" class="btn btn-ghost add-model-btn">+ Adicionar outro modelo</button>' : ''}
     </div>
   `;
-
-  wrapper.querySelector(".remove-model").addEventListener("click", () => {
-    if (wrapper.parentElement?.children.length === 1) return;
-    wrapper.remove();
-    refreshModelButtons();
-  });
-
-  wrapper.querySelector(".add-model-btn").addEventListener("click", () => {
-    addModelBlock();
-  });
-
-  wrapper.querySelector(".model-select").addEventListener("change", () => {
-    // native select closes by itself; no extra modal to fechar.
-  });
-
   return wrapper;
 }
 
-function refreshModelButtons() {
-  const container = $("pedidoBlocos");
-  const blocks = [...container.querySelectorAll(".model-block")];
-  blocks.forEach((block, index) => {
-    const removeBtn = block.querySelector(".remove-model");
-    if (removeBtn) removeBtn.classList.toggle("hidden", blocks.length === 1);
-    const footer = block.querySelector(".model-footer");
-    const addBtn = block.querySelector(".add-model-btn");
-    if (footer && addBtn) {
-      footer.style.display = index === blocks.length - 1 ? "flex" : "none";
-    }
-  });
-}
-
-function addModelBlock(data = {}) {
-  const container = $("pedidoBlocos");
-  const block = createModelBlock(data);
-  container.appendChild(block);
-  refreshModelButtons();
-  return block;
-}
-
-function getModelBlocksData() {
+function syncComposerFromDOM() {
   const blocks = [...document.querySelectorAll("#pedidoBlocos .model-block")];
-  return blocks.map(block => {
+  composerBlocks = blocks.map(block => {
     const select = block.querySelector(".model-select");
     const textarea = block.querySelector(".model-notes");
-    const value = select?.value || "001";
     return {
-      modeloCodigo: value,
-      modeloNome: modelLabelByValue(value),
+      modeloCodigo: select?.value || "001",
       descricao: (textarea?.value || "").trim()
     };
-  }).filter(item => item.modeloCodigo || item.descricao);
+  });
 }
 
-function setModelBlocksFromItems(items = []) {
+function renderPedidoComposer() {
   const container = $("pedidoBlocos");
-  container.innerHTML = "";
-  modelBlockCounter = 0;
+  if (!container) return;
+  if (!composerBlocks.length) composerBlocks = [{ modeloCodigo: "001", descricao: "" }];
 
-  if (!items.length) {
-    addModelBlock({ modeloCodigo: "001", descricao: "", __first: true });
-    return;
-  }
+  container.innerHTML = composerBlocks.map((data, index) => createModelBlock(data, index).outerHTML).join("");
 
-  items.forEach((item, index) => {
-    const block = createModelBlock({
-      modeloCodigo: item.modeloCodigo || "001",
-      descricao: item.descricao || item.notas || item.texto || "",
-      __first: index === 0
+  container.querySelectorAll(".remove-model").forEach(btn => {
+    btn.addEventListener("click", () => {
+      syncComposerFromDOM();
+      if (composerBlocks.length > 1) composerBlocks.pop();
+      else composerBlocks = [{ modeloCodigo: "001", descricao: "" }];
+      renderPedidoComposer();
     });
-    container.appendChild(block);
   });
-  refreshModelButtons();
+
+  container.querySelectorAll(".add-model-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      syncComposerFromDOM();
+      composerBlocks.push({ modeloCodigo: "001", descricao: "" });
+      renderPedidoComposer();
+      requestAnimationFrame(() => {
+        const last = $("pedidoBlocos").querySelector(".model-block:last-child .model-notes");
+        if (last) last.focus();
+      });
+    });
+  });
+
+  container.querySelectorAll(".model-select").forEach(sel => sel.addEventListener("change", syncComposerFromDOM));
+  container.querySelectorAll(".model-notes").forEach(txt => txt.addEventListener("input", syncComposerFromDOM));
 }
 
 function formatItemsText(items = []) {
@@ -334,7 +286,6 @@ function formatItemsText(items = []) {
     return desc ? `${name}\n${desc}` : name;
   }).join("\n\n").trim();
 }
-
 function htmlItemsText(items = []) {
   return items.map(item => {
     const name = fmt(item.modeloNome || modelLabelByValue(item.modeloCodigo) || item.modeloCodigo || "");
@@ -342,7 +293,6 @@ function htmlItemsText(items = []) {
     return desc ? `<div class="muted-card"><div class="model-tag">${name}</div><div class="model-summary">${desc}</div></div>` : `<div class="muted-card"><div class="model-tag">${name}</div></div>`;
   }).join("");
 }
-
 function legacyToItems(pedidoTexto) {
   const raw = String(pedidoTexto || "").trim();
   if (!raw) return [{ modeloCodigo: "001", modeloNome: modelLabelByValue("001"), descricao: "" }];
@@ -377,12 +327,10 @@ function legacyToItems(pedidoTexto) {
 
   return items.length ? items : [{ modeloCodigo: "001", modeloNome: modelLabelByValue("001"), descricao: raw }];
 }
-
 function getPedidoItemsFromOrder(p) {
   if (Array.isArray(p.itensPedido) && p.itensPedido.length) return p.itensPedido;
   return legacyToItems(p.pedidoTexto || "");
 }
-
 function pedidoResumo(p) {
   const items = getPedidoItemsFromOrder(p);
   const first = items[0];
@@ -390,7 +338,6 @@ function pedidoResumo(p) {
   const extra = items.length > 1 ? ` +${items.length - 1} modelo(s)` : "";
   return `${base}${extra}`;
 }
-
 function orderSearchText(p) {
   const items = getPedidoItemsFromOrder(p);
   return [
@@ -428,14 +375,12 @@ function renderPedidosDono() {
                 <div><strong>${fmt(p.estado || "-")} / ${fmt(p.cidade || "-")}</strong></div>
               </div>
             </div>
-
             <div class="pedido-preview">${fmt(pedidoResumo(p))}</div>
           </div>
           <div class="pedido-top-right">
             <span class="chip ${chipClass(p.status)}">${fmt(statusLabel(p.status))}</span>
           </div>
         </div>
-
         <div class="pedido-body open">
           <div class="pedido-body-inner">
             <div class="pedido-grid">
@@ -458,16 +403,13 @@ function renderPedidosDono() {
                   <div class="small-label">Modelos</div>
                   <div class="model-summary">${fmt(formatItemsText(items)).replace(/\n/g, "<br>")}</div>
                 </div>
-
                 ${p.obsPedido ? `<div class="obsBox"><strong>Observação do pedido</strong>${fmt(p.obsPedido).replace(/\n/g, "<br>")}</div>` : ""}
                 ${p.expObs ? `<div class="obsBox"><strong>Observação da expedição</strong>${fmt(p.expObs).replace(/\n/g, "<br>")}</div>` : ""}
                 ${p.editedBy ? `<div class="obsBox"><strong>Última edição</strong>${fmt(p.editedBy)}<br>${fmt(p.editedDate)} às ${fmt(p.editedTime)}</div>` : ""}
-
                 <div class="status-actions">
                   <button class="btn btn-ghost" onclick="window.editarPedido('${p.id}')">Editar pedido</button>
                   <button class="btn btn-danger" onclick="window.excluirPedido('${p.id}', 'dono')">Excluir pedido</button>
                 </div>
-
                 <div class="inline-note">
                   ${p.status === "separado"
                     ? "<strong>Pedido finalizado.</strong>"
@@ -486,16 +428,8 @@ function filteredExpeditionOrders() {
   const busca = ($("searchExp").value || "").trim().toLowerCase();
   const statusFiltro = $("filterStatus").value || "all";
   let view = pedidos.slice().sort((a, b) => tsToMs(b.createdAtMs) - tsToMs(a.createdAtMs));
-
-  if (filtroExpedicao === "pendentes") {
-    view = view.filter(p => p.status !== "separado");
-  }
-  if (statusFiltro !== "all") {
-    view = view.filter(p => p.status === statusFiltro);
-  }
-  if (busca) {
-    view = view.filter(p => orderSearchText(p).includes(busca));
-  }
+  if (statusFiltro !== "all") view = view.filter(p => p.status === statusFiltro);
+  if (busca) view = view.filter(p => orderSearchText(p).includes(busca));
   return view;
 }
 
@@ -601,14 +535,12 @@ window.togglePedidoExpedicao = function(id) {
   else expandedOrders.add(id);
   renderPedidosExp();
 };
-
 window.mostrarCampoObs = function(id, event) {
   if (event) event.stopPropagation();
   const sel = document.getElementById(`status-${id}`);
   const wrap = document.getElementById(`obsWrap-${id}`);
   if (sel && wrap) wrap.style.display = sel.value === "separado" ? "none" : "block";
 };
-
 window.atualizarPedido = async function(id) {
   try {
     if (!session || session.perfil !== "expedicao") {
@@ -645,7 +577,6 @@ window.atualizarPedido = async function(id) {
     alert("Não foi possível atualizar o pedido.");
   }
 };
-
 window.editarPedido = function(id) {
   const p = pedidos.find(x => x.id === id);
   if (!session || session.perfil !== "dono") {
@@ -662,22 +593,20 @@ window.editarPedido = function(id) {
   $("estado").value = p.estado || "";
   $("cidade").value = p.cidade || "";
   $("obsPedido").value = p.obsPedido || "";
-  setModelBlocksFromItems(getModelBlocksFromOrder(p));
+  composerBlocks = getModelBlocksFromOrder(p);
+  renderPedidoComposer();
   renderEditBox();
   $("cliente").focus();
 };
-
 function getModelBlocksFromOrder(p) {
   if (Array.isArray(p.itensPedido) && p.itensPedido.length) {
     return p.itensPedido.map(item => ({
       modeloCodigo: item.modeloCodigo || "001",
-      modeloNome: item.modeloNome || modelLabelByValue(item.modeloCodigo) || "",
       descricao: item.descricao || ""
     }));
   }
   return legacyToItems(p.pedidoTexto || "");
 }
-
 window.excluirPedido = async function(id, origem) {
   try {
     const p = pedidos.find(x => x.id === id);
@@ -709,7 +638,6 @@ window.excluirPedido = async function(id, origem) {
     }
 
     if (!confirm("Tem certeza que deseja excluir este pedido?")) return;
-
     await deleteDoc(doc(db, "pedidos", id));
 
     if (editandoId === id) {
@@ -718,8 +646,8 @@ window.excluirPedido = async function(id, origem) {
       $("estado").value = "";
       $("cidade").value = "";
       $("obsPedido").value = "";
-      $("pedidoBlocos").innerHTML = "";
-      addModelBlock({ modeloCodigo: "001", descricao: "" });
+      composerBlocks = [{ modeloCodigo: "001", descricao: "" }];
+      renderPedidoComposer();
     }
   } catch (e) {
     console.error(e);
@@ -747,9 +675,7 @@ async function ativarNotificacoes() {
           vapidKey: VAPID_KEY,
           serviceWorkerRegistration: reg
         });
-        if (token) {
-          localStorage.setItem(TOKEN_KEY, token);
-        }
+        if (token) localStorage.setItem(TOKEN_KEY, token);
       } catch (err) {
         console.warn("Erro ao registrar service worker/FCM:", err);
       }
@@ -760,10 +686,6 @@ async function ativarNotificacoes() {
     console.error(err);
     alert("Não foi possível ativar as notificações.");
   }
-}
-
-function markOpenBehaviorForNewOrders() {
-  // do not auto-expand everything; let the user click.
 }
 
 onMessage(messaging, (payload) => {
@@ -795,6 +717,31 @@ function setupEvents() {
     renderAll();
   });
 
+  $("pedidoBlocos").addEventListener("click", (event) => {
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    if (!target) return;
+    const add = target.closest(".add-model-btn");
+    const remove = target.closest(".remove-model");
+    if (add) {
+      syncComposerFromDOM();
+      composerBlocks.push({ modeloCodigo: "001", descricao: "" });
+      renderPedidoComposer();
+      requestAnimationFrame(() => {
+        const last = $("pedidoBlocos").querySelector(".model-block:last-child .model-notes");
+        if (last) last.focus();
+      });
+      return;
+    }
+    if (remove) {
+      syncComposerFromDOM();
+      if (composerBlocks.length > 1) composerBlocks.pop();
+      else composerBlocks = [{ modeloCodigo: "001", descricao: "" }];
+      renderPedidoComposer();
+    }
+  });
+  $("pedidoBlocos").addEventListener("input", syncComposerFromDOM);
+  $("pedidoBlocos").addEventListener("change", syncComposerFromDOM);
+
   $("btnEnviarPedido").addEventListener("click", async () => {
     try {
       if (!session || session.perfil !== "dono") {
@@ -806,7 +753,12 @@ function setupEvents() {
       const estado = $("estado").value.trim();
       const cidade = $("cidade").value.trim();
       const obsPedido = $("obsPedido").value.trim();
-      const items = getModelBlocksData();
+      syncComposerFromDOM();
+      const items = composerBlocks.map(item => ({
+        modeloCodigo: item.modeloCodigo || "001",
+        modeloNome: modelLabelByValue(item.modeloCodigo || "001"),
+        descricao: (item.descricao || "").trim()
+      })).filter(item => item.modeloCodigo || item.descricao);
 
       if (!cliente || !estado || !cidade) {
         alert("Preencha o cliente, o estado e a cidade.");
@@ -886,8 +838,8 @@ function setupEvents() {
       $("estado").value = "";
       $("cidade").value = "";
       $("obsPedido").value = "";
-      $("pedidoBlocos").innerHTML = "";
-      addModelBlock({ modeloCodigo: "001", descricao: "" });
+      composerBlocks = [{ modeloCodigo: "001", descricao: "" }];
+      renderPedidoComposer();
     } catch (e) {
       console.error(e);
       alert(editandoId ? "Não foi possível salvar as alterações." : "Não foi possível enviar o pedido.");
@@ -900,8 +852,8 @@ function setupEvents() {
     $("estado").value = "";
     $("cidade").value = "";
     $("obsPedido").value = "";
-    $("pedidoBlocos").innerHTML = "";
-    addModelBlock({ modeloCodigo: "001", descricao: "" });
+    composerBlocks = [{ modeloCodigo: "001", descricao: "" }];
+    renderPedidoComposer();
   });
 
   $("btnExemplo").addEventListener("click", () => {
@@ -909,19 +861,11 @@ function setupEvents() {
     $("estado").value = "Ceará";
     $("cidade").value = "Juazeiro do Norte";
     $("obsPedido").value = "Separar com prioridade.";
-    $("pedidoBlocos").innerHTML = "";
-    addModelBlock({ modeloCodigo: "001", descricao: "50 P preto\n100 M azul" });
-    addModelBlock({ modeloCodigo: "002", descricao: "20 G branco" });
-  });
-
-  $("btnPendentes").addEventListener("click", () => {
-    filtroExpedicao = "pendentes";
-    renderExpedicao();
-  });
-
-  $("btnTodos").addEventListener("click", () => {
-    filtroExpedicao = "todos";
-    renderExpedicao();
+    composerBlocks = [
+      { modeloCodigo: "001", descricao: "50 P preto\n100 M azul" },
+      { modeloCodigo: "002", descricao: "20 G branco" }
+    ];
+    renderPedidoComposer();
   });
 
   $("searchExp").addEventListener("input", renderPedidosExp);
@@ -976,7 +920,4 @@ onSnapshot(pedidosRef, (snapshot) => {
 
 setupEvents();
 showLoginFields();
-if (!document.querySelector("#pedidoBlocos .model-block")) {
-  addModelBlock({ modeloCodigo: "001", descricao: "" });
-}
 renderAll();
