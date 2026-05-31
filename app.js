@@ -193,7 +193,8 @@ function renderEditBox() {
 }
 
 function modelLabelByValue(value) {
-  return MODEL_OPTIONS.find(m => m.value === value)?.label || value || "";
+  if (!value) return "";
+  return MODEL_OPTIONS.find(m => m.value === value)?.label || value;
 }
 function renderModelSelect(selected = "001") {
   const groups = {};
@@ -266,7 +267,7 @@ function renderPedidoComposer() {
   container.querySelectorAll(".add-model-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       syncComposerFromDOM();
-      composerBlocks.push({ modeloCodigo: "001", descricao: "" });
+     composerBlocks.push({ modeloCodigo: "", descricao: "" });
       renderPedidoComposer();
       requestAnimationFrame(() => {
         const last = $("pedidoBlocos").querySelector(".model-block:last-child .model-notes");
@@ -724,7 +725,7 @@ function setupEvents() {
     const remove = target.closest(".remove-model");
     if (add) {
       syncComposerFromDOM();
-      composerBlocks.push({ modeloCodigo: "001", descricao: "" });
+     composerBlocks.push({ modeloCodigo: "", descricao: "" });
       renderPedidoComposer();
       requestAnimationFrame(() => {
         const last = $("pedidoBlocos").querySelector(".model-block:last-child .model-notes");
@@ -754,12 +755,13 @@ function setupEvents() {
       const cidade = $("cidade").value.trim();
       const obsPedido = $("obsPedido").value.trim();
       syncComposerFromDOM();
-      const items = composerBlocks.map(item => ({
-        modeloCodigo: item.modeloCodigo || "001",
-        modeloNome: modelLabelByValue(item.modeloCodigo || "001"),
-        descricao: (item.descricao || "").trim()
-      })).filter(item => item.modeloCodigo || item.descricao);
-
+     const items = composerBlocks
+   .filter(item => item.modeloCodigo)
+   .map(item => ({
+     modeloCodigo: item.modeloCodigo,
+     modeloNome: modelLabelByValue(item.modeloCodigo),
+     descricao: (item.descricao || "").trim()
+    }));
       if (!cliente || !estado || !cidade) {
         alert("Preencha o cliente, o estado e a cidade.");
         return;
