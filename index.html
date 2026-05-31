@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sistema Expedição Sou Bela</title>
-  <meta name="theme-color" content="#d63384" />
   <link rel="icon" type="image/png" href="Sou Bela -logo (3).png">
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -14,16 +13,13 @@
 
       <div id="loginScreen" class="login-shell">
         <div class="card">
-          <div class="brand-row">
-            <img class="brand-logo" src="Sou Bela -logo (3).png" alt="Sou Bela" />
-            <div>
-              <h1>Sistema de Pedidos e Expedição</h1>
-              <p class="sub">Escolha a área para entrar. Em Vendas, selecione quem está logando.</p>
-            </div>
+          <div class="page-title">
+            <h1>Sistema de Pedidos e Expedição</h1>
+            <p class="sub">Escolha a área para entrar. Em Vendas, selecione quem está logando.</p>
           </div>
 
           <div class="grid-login">
-            <div class="card flat-card">
+            <section class="card inner-card">
               <h2>Entrar</h2>
               <p class="sub">Sem senha. Só selecione a área correta.</p>
 
@@ -52,19 +48,16 @@
                 <div class="help-line"><span>Vendas</span><strong>Dona Lene / Fabio</strong></div>
                 <div class="help-line"><span>Expedição</span><strong>Entrada direta</strong></div>
               </div>
-            </div>
+            </section>
 
-            <div class="card flat-card">
+            <section class="card inner-card">
               <h2>Como funciona</h2>
               <p class="sub">Vendas envia os pedidos e vê só os próprios. Expedição marca status e escreve observações.</p>
               <div class="note">
                 Em qualquer status diferente de <strong>Separado</strong>, a expedição pode deixar observação.
                 Para <strong>Falta peça</strong>, a observação fica obrigatória.
               </div>
-              <div class="inline-note" style="margin-top:14px">
-                O pedido de vendas agora começa com o modelo <strong>001 - Reforçado Liso</strong> e permite adicionar outros modelos em blocos separados.
-              </div>
-            </div>
+            </section>
           </div>
         </div>
       </div>
@@ -72,6 +65,7 @@
       <div id="appDono" class="hidden">
         <div class="hero">
           <div>
+            <p class="eyebrow">Sistema de Vendas Sou Bela</p>
             <h1>Painel de Vendas</h1>
             <p id="nomeSessaoDono"></p>
           </div>
@@ -88,41 +82,38 @@
               <button class="btn btn-dark" id="btnSairDono">Sair</button>
               <button class="btn btn-ghost" id="btnAtivarNotificacoesDono">Ativar notificações</button>
             </div>
-
-            <div class="sidebar-box">
-              <strong>Modelo inicial</strong>
-              <div class="tiny">O pedido sempre começa com <b>001 - Reforçado Liso</b>.</div>
-            </div>
           </aside>
 
           <main class="main">
             <div class="section-title">
               <div>
                 <h3>Novo pedido</h3>
-                <p>Escolha os modelos, escreva as grades e envie tudo em um único pedido.</p>
+                <p>Preencha o cliente, o endereço e os itens por modelo.</p>
               </div>
             </div>
 
             <div class="split">
-              <section class="card panel">
+              <section class="card inner-card">
                 <div class="field">
                   <label for="cliente">Cliente</label>
                   <input id="cliente" type="text" placeholder="Nome do cliente" />
                 </div>
 
-                <div class="builder-head">
-                  <div>
-                    <h4>Montar pedido por modelo</h4>
-                    <p class="tiny">Cada modelo fica em um bloco separado com a sua grade abaixo.</p>
+                <div class="address-grid">
+                  <div class="field">
+                    <label for="estado">Estado</label>
+                    <input id="estado" type="text" placeholder="Ex: Ceará" />
                   </div>
-                  <div class="builder-actions">
-                    <button class="btn btn-primary" id="btnEscolherModelo" type="button">Escolher outro modelo</button>
-                    <button class="btn btn-ghost" id="btnLimparModelos" type="button">Limpar modelos</button>
+                  <div class="field">
+                    <label for="cidade">Cidade</label>
+                    <input id="cidade" type="text" placeholder="Ex: Juazeiro do Norte" />
                   </div>
                 </div>
 
-                <div id="modeloPicker" class="model-picker hidden"></div>
-                <div id="pedidoBlocks" class="order-blocks"></div>
+                <div class="field">
+                  <label>Modelos do pedido</label>
+                  <div id="pedidoBlocos"></div>
+                </div>
 
                 <div class="field">
                   <label for="obsPedido">Observações do pedido</label>
@@ -141,14 +132,8 @@
                 </div>
               </section>
 
-              <section class="card panel">
-                <div class="section-title" style="margin-bottom:14px">
-                  <div>
-                    <h3>Resumo</h3>
-                    <p>Prévia do pedido antes de enviar.</p>
-                  </div>
-                </div>
-
+              <section class="card inner-card">
+                <h3 style="margin-top:0">Resumo</h3>
                 <div class="stats">
                   <div class="stat">
                     <span class="label">Meus pedidos</span>
@@ -164,21 +149,13 @@
                   </div>
                 </div>
 
-                <div class="preview-box">
-                  <div class="preview-head">
-                    <strong>Prévia do pedido</strong>
-                    <span id="pedidoPreviewCount" class="mini-badge">1 modelo</span>
-                  </div>
-                  <div id="pedidoPreview" class="preview-list"></div>
-                </div>
-
-                <div class="note" style="margin-top:14px">
+                <div class="note">
                   Aqui aparece só o que foi enviado por <strong id="nomePedidosDono"></strong>.
                 </div>
               </section>
             </div>
 
-            <section class="card panel" style="margin-top:16px;">
+            <section class="card inner-card list-section">
               <div class="section-title">
                 <div>
                   <h3>Meus pedidos</h3>
@@ -194,8 +171,9 @@
       <div id="appExpedicao" class="hidden">
         <div class="hero">
           <div>
+            <p class="eyebrow">Sistema de Expedição Sou Bela</p>
             <h1>Painel da Expedição</h1>
-            <p>Veja os pedidos em lista, abra os detalhes e confirme a separação.</p>
+            <p>Abra um pedido para visualizar e mudar o status direto no próprio cartão.</p>
           </div>
           <div class="badge">Área de separação</div>
         </div>
@@ -205,14 +183,13 @@
             <div class="role">Perfil</div>
             <h2>Expedição</h2>
             <div class="who">Operação</div>
-            <p class="tiny">Leitura dos pedidos, atualização de status e observações.</p>
+            <p class="tiny">Somente leitura dos pedidos e atualização de status.</p>
             <div class="actions">
               <button class="btn btn-dark" id="btnSairExp">Sair</button>
               <button class="btn btn-ghost" id="btnAtivarNotificacoesExp">Ativar notificações</button>
             </div>
-            <div class="sidebar-box">
-              <strong>Dica</strong>
-              <div class="tiny">Selecione um pedido na lista para ver os detalhes na lateral.</div>
+            <div class="note">
+              Quando o status for diferente de <strong>Separado</strong>, o pedido fica pendente.
             </div>
           </aside>
 
@@ -224,12 +201,7 @@
               </div>
             </div>
 
-            <div class="actions" style="margin-top:0">
-              <button id="btnPendentes" class="btn btn-primary">Pendentes</button>
-              <button id="btnTodos" class="btn btn-ghost">Todos</button>
-            </div>
-
-            <div class="stats" style="margin-top:12px">
+            <div class="stats">
               <div class="stat">
                 <span class="label">Total</span>
                 <div class="value" id="statTotalExp">0</div>
@@ -245,7 +217,7 @@
             </div>
 
             <div class="filters">
-              <input id="searchExp" placeholder="Buscar pedido, cliente ou modelo..." />
+              <input id="searchExp" placeholder="Buscar pedido, cliente, estado, cidade ou modelo..." />
               <select id="filterStatus">
                 <option value="all">Todos os status</option>
                 <option value="nao-visualizado">Não visualizado</option>
@@ -256,32 +228,7 @@
               </select>
             </div>
 
-            <div class="exp-layout">
-              <section class="card panel">
-                <div class="section-title" style="margin-bottom:14px">
-                  <div>
-                    <h3>Lista de pedidos</h3>
-                    <p>Escolha um pedido para ver as informações completas.</p>
-                  </div>
-                </div>
-                <div id="listaPedidosExp" class="orders-list"></div>
-              </section>
-
-              <aside class="card panel detail-panel">
-                <div class="section-title" style="margin-bottom:12px">
-                  <div>
-                    <h3>Detalhes</h3>
-                    <p>Atualize o status e escreva a observação da expedição.</p>
-                  </div>
-                </div>
-
-                <div id="detalheExpVazio" class="empty detail-empty">
-                  Selecione um pedido na lista para ver os detalhes.
-                </div>
-
-                <div id="detalheExpConteudo" class="hidden"></div>
-              </aside>
-            </div>
+            <div style="margin-top:16px" id="listaPedidosExp"></div>
           </main>
         </div>
       </div>

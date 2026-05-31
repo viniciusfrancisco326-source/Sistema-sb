@@ -41,34 +41,21 @@ const STATUS = {
   "separado": { label: "Separado", cls: "separado", chip: "green" }
 };
 
-const MODEL_GROUPS = [
-  {
-    title: "Linha principal",
-    items: [
-      { id: "001", label: "001 - Reforçado Liso" },
-      { id: "002", label: "002 - Sutiã Reforçado Renda" },
-      { id: "003", label: "003 - Sutiã Nadador" },
-      { id: "007", label: "007 - Sutiã Solteirinho Liso" },
-      { id: "008", label: "008 - Solteirinho de Renda" },
-      { id: "009", label: "009 - Sutiã Confort" },
-      { id: "REF0013", label: "REF: Conjunto De Liguinha 0013" }
-    ]
-  },
-  {
-    title: "Linha Plus Size",
-    items: [
-      { id: "004", label: "004 - Sutiã Plus De Renda" },
-      { id: "005", label: "005 - Sutiã Plus Size Poliéster" },
-      { id: "005.2", label: "005.2 - Sutiã Plus Poliéster c/Renda" },
-      { id: "006", label: "006 - Sutiã Plus Size Poliamida" },
-      { id: "PLUSCONJ", label: "Conjunto De Plus Size" }
-    ]
-  }
+const MODEL_OPTIONS = [
+  { group: "Linha base", value: "001", label: "001 - Reforçado Liso" },
+  { group: "Linha base", value: "002", label: "002 - Sutiã Reforçado Renda" },
+  { group: "Linha base", value: "003", label: "003 - Sutiã Nadador" },
+  { group: "Linha base", value: "007", label: "007 - Sutiã Solteirinho Liso" },
+  { group: "Linha base", value: "008", label: "008 - Solteirinho de Renda" },
+  { group: "Linha base", value: "009", label: "009 - Sutiã Confort" },
+  { group: "Linha base", value: "REF-LINGERIE", label: "REF: Conjunto de Lingerie" },
+  { group: "Linha base", value: "REF-0013", label: "REF: Conjunto de Liguinha 0013" },
+  { group: "Linha Plus Size", value: "004-PLUS", label: "004 - Sutiã Plus De Renda" },
+  { group: "Linha Plus Size", value: "005-PLUS-POLIESTER", label: "005 - Sutiã Plus Size Poliéster" },
+  { group: "Linha Plus Size", value: "005.2-PLUS-POLIESTER-C-RENDA", label: "005.2 - Sutiã Plus Poliéster c/Renda" },
+  { group: "Linha Plus Size", value: "006-PLUS-POLIAMIDA", label: "006 - Sutiã Plus Size Poliamida" },
+  { group: "Linha Plus Size", value: "CONJUNTO-PLUS-SIZE", label: "Conjunto De Plus Size" }
 ];
-
-const MODEL_MAP = new Map(
-  MODEL_GROUPS.flatMap(group => group.items.map(item => [item.id, { ...item, group: group.title }]))
-);
 
 const $ = (id) => document.getElementById(id);
 
@@ -78,18 +65,8 @@ let editandoId = null;
 let filtroExpedicao = "pendentes";
 let initialized = false;
 let prevMap = new Map();
-let orderBlocks = [createBlock("001")];
-let pickerOpen = false;
-let selectedExpeditionOrderId = null;
-
-function uid() {
-  if (window.crypto && typeof crypto.randomUUID === "function") return crypto.randomUUID();
-  return `b_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-}
-
-function createBlock(modelId = "001", texto = "") {
-  return { uid: uid(), modelId, texto };
-}
+let expandedOrders = new Set();
+let modelBlockCounter = 0;
 
 function loadSession() {
   try { return JSON.parse(localStorage.getItem(SESSION_KEY)) || null; } catch { return null; }
@@ -109,19 +86,11 @@ function fmt(str) {
     .replaceAll("'", "&#039;");
 }
 
-function normalizeText(str) {
-  return String(str ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
 function statusClass(s) { return STATUS[s]?.cls || "nao-visualizado"; }
 function chipClass(s) { return STATUS[s]?.chip || "gray"; }
 function statusLabel(s) { return STATUS[s]?.label || s || ""; }
 function isPending(s) { return s !== "separado"; }
+function isCollapsedStatus(s) { return s === "separado"; }
 
 function tsToMs(v) {
   if (!v) return 0;
@@ -153,11 +122,7 @@ function fmtUpdated(p) {
 
 function notify(title, body) {
   if (Notification.permission === "granted") {
-    try {
-      new Notification(title, { body, icon: "Sou Bela -logo (3).png" });
-    } catch {
-      // sem fallback visível para não quebrar a interface
-    }
+    new Notification(title, { body, icon: "Sou Bela -logo (3).png" });
   }
 }
 
@@ -181,12 +146,6 @@ function renderDono() {
   renderStats();
   renderPedidosDono();
   renderEditBox();
-  if ($("pedidoBlocks") && $("pedidoBlocks").contains(document.activeElement)) {
-    renderPedidoPreviewOnly();
-    renderPicker();
-  } else {
-    renderPedidoComposer();
-  }
 }
 
 function renderExpedicao() {
@@ -246,306 +205,199 @@ function renderEditBox() {
   $("btnCancelarEdicao").style.display = "inline-flex";
 }
 
-function getModelLabel(modelId) {
-  return MODEL_MAP.get(modelId)?.label || String(modelId || "").trim();
+function modelLabelByValue(value) {
+  return MODEL_OPTIONS.find(m => m.value === value)?.label || value || "";
 }
 
-function getModelGroup(modelId) {
-  return MODEL_MAP.get(modelId)?.group || "Outros";
+function modelGroupByValue(value) {
+  return MODEL_OPTIONS.find(m => m.value === value)?.group || "";
 }
 
-function createLabelToIdMap() {
-  const map = new Map();
-  for (const [id, item] of MODEL_MAP.entries()) {
-    map.set(normalizeText(item.label), id);
+function renderModelSelect(selected = "001") {
+  const groups = {};
+  for (const model of MODEL_OPTIONS) {
+    if (!groups[model.group]) groups[model.group] = [];
+    groups[model.group].push(model);
   }
-  return map;
-}
-
-const LABEL_TO_ID = createLabelToIdMap();
-
-function inferModelIdFromHeading(line) {
-  const normalized = normalizeText(line);
-
-  for (const [id, item] of MODEL_MAP.entries()) {
-    const itemNorm = normalizeText(item.label);
-    if (normalized === itemNorm) return id;
-    if (normalized === normalizeText(item.label.replace(/^0+/, ""))) return id;
-  }
-
-  const codeMatch = String(line).trim().match(/^(\d{3}(?:\.\d+)?)\s*-\s*(.+)$/i);
-  if (codeMatch) {
-    const code = codeMatch[1].trim();
-    const rest = codeMatch[2].trim();
-    for (const [id, item] of MODEL_MAP.entries()) {
-      if (normalizeText(item.label).startsWith(normalizeText(`${code} - ${rest}`))) return id;
-    }
-    if (LABEL_TO_ID.has(normalizeText(`${code} - ${rest}`))) return LABEL_TO_ID.get(normalizeText(`${code} - ${rest}`));
-    if (LABEL_TO_ID.has(normalized)) return LABEL_TO_ID.get(normalized);
-  }
-
-  if (normalized.startsWith("ref: conjunto de liguinha 0013")) return "REF0013";
-  if (normalized === normalizeText("Conjunto De Plus Size")) return "PLUSCONJ";
-  return null;
-}
-
-function isHeadingLine(line) {
-  if (!line) return false;
-  const trimmed = String(line).trim();
-  if (!trimmed) return false;
-
-  if (inferModelIdFromHeading(trimmed)) return true;
-  if (/^linha plus size:?$/i.test(trimmed)) return false;
-  if (/^linha principal:?$/i.test(trimmed)) return false;
-  if (/^\d{3}(?:\.\d+)?\s*-\s*/.test(trimmed)) return true;
-  if (/^ref:\s*/i.test(trimmed)) return true;
-  if (LABEL_TO_ID.has(normalizeText(trimmed))) return true;
-  return false;
-}
-
-function parsePedidoTextToBlocks(text) {
-  const raw = String(text ?? "").replace(/\r/g, "");
-  if (!raw.trim()) return [];
-
-  const lines = raw.split("\n");
-  const blocks = [];
-  let current = null;
-
-  const pushCurrent = () => {
-    if (!current) return;
-    const texto = current.lines.join("\n").trim();
-    if (current.modelId || texto) {
-      blocks.push({
-        uid: uid(),
-        modelId: current.modelId || "001",
-        texto
-      });
-    }
-    current = null;
-  };
-
-  for (const line of lines) {
-    const trimmed = line.trimEnd();
-
-    if (!trimmed.trim()) {
-      if (current) current.lines.push("");
-      continue;
-    }
-
-    if (isHeadingLine(trimmed)) {
-      const inferred = inferModelIdFromHeading(trimmed);
-      pushCurrent();
-      current = { modelId: inferred || "001", lines: [trimmed] };
-      // A linha de cabeçalho não deve ficar dentro do texto do modelo em duplicidade
-      current.lines = [];
-      continue;
-    }
-
-    if (!current) {
-      current = { modelId: "001", lines: [] };
-    }
-    current.lines.push(trimmed);
-  }
-
-  pushCurrent();
-  return blocks.filter(b => b.texto.length > 0 || b.modelId);
-}
-
-function getPedidoBlocksFromPedido(p) {
-  if (Array.isArray(p?.pedidoItens) && p.pedidoItens.length) {
-    return p.pedidoItens.map(item => createBlock(
-      item.modelId || inferModelIdFromHeading(item.titulo) || "001",
-      item.texto || item.content || item.grade || ""
-    ));
-  }
-  const parsed = parsePedidoTextToBlocks(p?.pedidoTexto || "");
-  if (parsed.length) return parsed;
-  return [createBlock("001", p?.pedidoTexto || "")];
-}
-
-function setOrderBlocks(blocks) {
-  const next = Array.isArray(blocks) && blocks.length ? blocks : [createBlock("001")];
-  orderBlocks = next.map(b => ({
-    uid: b.uid || uid(),
-    modelId: b.modelId || "001",
-    texto: b.texto || ""
-  }));
-  renderPedidoComposer();
-}
-
-function renderModelOptions(selectedId) {
-  const options = MODEL_GROUPS.map(group => {
-    const inner = group.items.map(item => {
-      const selected = item.id === selectedId ? "selected" : "";
-      return `<option value="${fmt(item.id)}" ${selected}>${fmt(item.label)}</option>`;
-    }).join("");
-    return `<optgroup label="${fmt(group.title)}">${inner}</optgroup>`;
-  }).join("");
+  const options = Object.entries(groups).map(([groupName, items]) => `
+    <optgroup label="${fmt(groupName)}">
+      ${items.map(model => `<option value="${fmt(model.value)}" ${model.value === selected ? "selected" : ""}>${fmt(model.label)}</option>`).join("")}
+    </optgroup>
+  `).join("");
   return options;
 }
 
-function renderPicker() {
-  const picker = $("modeloPicker");
-  if (!pickerOpen) {
-    picker.classList.add("hidden");
-    picker.innerHTML = "";
-    $("btnEscolherModelo").textContent = "Escolher outro modelo";
-    $("btnEscolherModelo").setAttribute("aria-expanded", "false");
+function createModelBlock(data = {}) {
+  const id = `model-block-${++modelBlockCounter}`;
+  const wrapper = document.createElement("div");
+  wrapper.className = "model-block";
+  wrapper.dataset.blockId = id;
+  wrapper.innerHTML = `
+    <div class="model-block-head">
+      <div class="field" style="flex:1">
+        <label>Modelo</label>
+        <select class="model-select">
+          ${renderModelSelect(data.modeloCodigo || "001")}
+        </select>
+      </div>
+      <button type="button" class="remove-model ${data.__first ? "hidden" : ""}">Remover</button>
+    </div>
+
+    <div class="field">
+      <label>Como vai ser o pedido neste modelo</label>
+      <textarea class="model-notes" placeholder="Ex: 50 P preto / 100 M azul">${fmt(data.descricao || "")}</textarea>
+    </div>
+
+    <div class="model-footer">
+      <button type="button" class="btn btn-ghost add-model-btn">+ Adicionar outro modelo</button>
+    </div>
+  `;
+
+  wrapper.querySelector(".remove-model").addEventListener("click", () => {
+    if (wrapper.parentElement?.children.length === 1) return;
+    wrapper.remove();
+    refreshModelButtons();
+  });
+
+  wrapper.querySelector(".add-model-btn").addEventListener("click", () => {
+    addModelBlock();
+  });
+
+  wrapper.querySelector(".model-select").addEventListener("change", () => {
+    // native select closes by itself; no extra modal to fechar.
+  });
+
+  return wrapper;
+}
+
+function refreshModelButtons() {
+  const container = $("pedidoBlocos");
+  const blocks = [...container.querySelectorAll(".model-block")];
+  blocks.forEach((block, index) => {
+    const removeBtn = block.querySelector(".remove-model");
+    if (removeBtn) removeBtn.classList.toggle("hidden", blocks.length === 1);
+    const footer = block.querySelector(".model-footer");
+    const addBtn = block.querySelector(".add-model-btn");
+    if (footer && addBtn) {
+      footer.style.display = index === blocks.length - 1 ? "flex" : "none";
+    }
+  });
+}
+
+function addModelBlock(data = {}) {
+  const container = $("pedidoBlocos");
+  const block = createModelBlock(data);
+  container.appendChild(block);
+  refreshModelButtons();
+  return block;
+}
+
+function getModelBlocksData() {
+  const blocks = [...document.querySelectorAll("#pedidoBlocos .model-block")];
+  return blocks.map(block => {
+    const select = block.querySelector(".model-select");
+    const textarea = block.querySelector(".model-notes");
+    const value = select?.value || "001";
+    return {
+      modeloCodigo: value,
+      modeloNome: modelLabelByValue(value),
+      descricao: (textarea?.value || "").trim()
+    };
+  }).filter(item => item.modeloCodigo || item.descricao);
+}
+
+function setModelBlocksFromItems(items = []) {
+  const container = $("pedidoBlocos");
+  container.innerHTML = "";
+  modelBlockCounter = 0;
+
+  if (!items.length) {
+    addModelBlock({ modeloCodigo: "001", descricao: "", __first: true });
     return;
   }
 
-  picker.classList.remove("hidden");
-  $("btnEscolherModelo").textContent = "Fechar modelos";
-  $("btnEscolherModelo").setAttribute("aria-expanded", "true");
-
-  picker.innerHTML = `
-    <div class="model-picker-header">
-      <div>
-        <strong>Escolher outro modelo</strong>
-        <div class="tiny">Clique no modelo para adicionar um novo bloco ao pedido.</div>
-      </div>
-      <span class="mini-badge">${orderBlocks.length} bloco(s) no pedido</span>
-    </div>
-    ${MODEL_GROUPS.map(group => `
-      <div class="model-group">
-        <h5>${fmt(group.title)}</h5>
-        <div class="model-picker-grid">
-          ${group.items.map(item => `
-            <button type="button" class="model-btn" data-add-model="${fmt(item.id)}">
-              <strong>${fmt(item.label)}</strong>
-              <span>Adicionar ao pedido</span>
-            </button>
-          `).join("")}
-        </div>
-      </div>
-    `).join("")}
-  `;
+  items.forEach((item, index) => {
+    const block = createModelBlock({
+      modeloCodigo: item.modeloCodigo || "001",
+      descricao: item.descricao || item.notas || item.texto || "",
+      __first: index === 0
+    });
+    container.appendChild(block);
+  });
+  refreshModelButtons();
 }
 
-function renderPedidoPreviewOnly() {
-  const preview = $("pedidoPreview");
-  const count = $("pedidoPreviewCount");
-  const total = orderBlocks.length;
-  count.textContent = `${total} ${total === 1 ? "modelo" : "modelos"}`;
-
-  preview.innerHTML = orderBlocks.length
-    ? orderBlocks.map((block, index) => {
-        const label = getModelLabel(block.modelId);
-        const texto = String(block.texto || "").trim();
-        return `
-          <div class="preview-item">
-            <strong>${index + 1}. ${fmt(label)}</strong>
-            <pre>${fmt(texto || "Sem detalhes preenchidos ainda.")}</pre>
-          </div>
-        `;
-      }).join("")
-    : `<div class="preview-empty">Adicione um modelo para ver a prévia aqui.</div>`;
+function formatItemsText(items = []) {
+  return items.map(item => {
+    const name = item.modeloNome || modelLabelByValue(item.modeloCodigo) || item.modeloCodigo || "";
+    const desc = (item.descricao || "").trim();
+    return desc ? `${name}\n${desc}` : name;
+  }).join("\n\n").trim();
 }
 
-function renderPedidoComposer() {
-  const blocksWrap = $("pedidoBlocks");
-
-  blocksWrap.innerHTML = orderBlocks.map((block, index) => {
-    const label = getModelLabel(block.modelId);
-    return `
-      <article class="order-block ${index === 0 ? "primary" : ""}" data-block="${fmt(block.uid)}">
-        <div class="order-block-head">
-          <div class="order-title-row">
-            <span class="order-index">${index + 1}</span>
-            <div class="order-model">
-              <label>Modelo</label>
-              <select data-model-select="${fmt(block.uid)}">
-                ${renderModelOptions(block.modelId)}
-              </select>
-            </div>
-          </div>
-          <div class="builder-actions" style="margin-top:0">
-            ${index === 0 ? `<span class="mini-badge">Modelo inicial</span>` : `<button type="button" class="btn btn-ghost btn-mini" data-remove-block="${fmt(block.uid)}">Remover</button>`}
-          </div>
-        </div>
-
-        <div class="field">
-          <label>Grade / detalhes do modelo</label>
-          <textarea data-block-text="${fmt(block.uid)}" placeholder="Escreva a grade, cores, tamanhos e detalhes deste modelo...">${fmt(block.texto)}</textarea>
-        </div>
-
-        <div class="tiny">Será enviado como <strong>${fmt(label)}</strong>.</div>
-      </article>
-    `;
+function htmlItemsText(items = []) {
+  return items.map(item => {
+    const name = fmt(item.modeloNome || modelLabelByValue(item.modeloCodigo) || item.modeloCodigo || "");
+    const desc = fmt((item.descricao || "").trim()).replace(/\n/g, "<br>");
+    return desc ? `<div class="muted-card"><div class="model-tag">${name}</div><div class="model-summary">${desc}</div></div>` : `<div class="muted-card"><div class="model-tag">${name}</div></div>`;
   }).join("");
-
-  if (!orderBlocks.length) {
-    blocksWrap.innerHTML = `<div class="empty">Nenhum modelo adicionado.</div>`;
-  }
-
-  renderPedidoPreviewOnly();
-  renderPicker();
 }
 
-function buildPedidoTextoFromBlocks(blocks) {
-  return blocks
-    .map(block => {
-      const label = getModelLabel(block.modelId);
-      const texto = String(block.texto || "").trim();
-      return texto ? `${label}\n${texto}` : label;
-    })
-    .join("\n\n")
-    .trim();
-}
+function legacyToItems(pedidoTexto) {
+  const raw = String(pedidoTexto || "").trim();
+  if (!raw) return [{ modeloCodigo: "001", modeloNome: modelLabelByValue("001"), descricao: "" }];
 
-function normalizeOrderItems(blocks) {
-  return blocks.map((block, index) => ({
-    ordem: index + 1,
-    uid: block.uid,
-    modelId: block.modelId,
-    titulo: getModelLabel(block.modelId),
-    grupo: getModelGroup(block.modelId),
-    texto: String(block.texto || "").trim()
-  }));
-}
+  const blocks = raw.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean);
+  const items = [];
 
-function renderPedidoBlocksPreviewInCard(p) {
-  const items = getPedidoItemsForDisplay(p);
-  if (!items.length) {
-    return `<div class="pedido-text">${fmt(p.pedidoTexto || "")}</div>`;
-  }
-  return `
-    <div class="pedido-text">
-      ${items.map((item, index) => `
-        <div class="model-line">
-          <div class="dot"></div>
-          <div>
-            <strong>${fmt(item.titulo || `Modelo ${index + 1}`)}</strong>
-            <div>${fmt(item.texto || "Sem detalhes.")}</div>
-          </div>
-        </div>
-        ${index < items.length - 1 ? '<div style="height:10px"></div>' : ''}
-      `).join("")}
-    </div>
-  `;
-}
-
-function getPedidoItemsForDisplay(p) {
-  if (Array.isArray(p?.pedidoItens) && p.pedidoItens.length) {
-    return p.pedidoItens.map((item, index) => ({
-      ordem: item.ordem || index + 1,
-      titulo: item.titulo || getModelLabel(item.modelId) || `Modelo ${index + 1}`,
-      texto: item.texto || item.content || item.grade || ""
-    }));
+  for (const block of blocks) {
+    const lines = block.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    const first = lines[0] || "";
+    const matched = MODEL_OPTIONS.find(m => first.toLowerCase().includes(m.label.toLowerCase()) || first.toLowerCase().includes(m.value.toLowerCase()));
+    if (matched && lines.length > 0) {
+      items.push({
+        modeloCodigo: matched.value,
+        modeloNome: matched.label,
+        descricao: lines.slice(1).join("\n")
+      });
+    } else if (lines.length > 1) {
+      items.push({
+        modeloCodigo: "001",
+        modeloNome: modelLabelByValue("001"),
+        descricao: lines.join("\n")
+      });
+    } else {
+      items.push({
+        modeloCodigo: "001",
+        modeloNome: modelLabelByValue("001"),
+        descricao: block
+      });
+    }
   }
 
-  const blocks = parsePedidoTextToBlocks(p?.pedidoTexto || "");
-  if (blocks.length) {
-    return blocks.map((block, index) => ({
-      ordem: index + 1,
-      titulo: getModelLabel(block.modelId),
-      texto: block.texto
-    }));
-  }
+  return items.length ? items : [{ modeloCodigo: "001", modeloNome: modelLabelByValue("001"), descricao: raw }];
+}
 
-  const raw = String(p?.pedidoTexto || "").trim();
-  if (!raw) return [];
-  return [{ ordem: 1, titulo: "Pedido", texto: raw }];
+function getPedidoItemsFromOrder(p) {
+  if (Array.isArray(p.itensPedido) && p.itensPedido.length) return p.itensPedido;
+  return legacyToItems(p.pedidoTexto || "");
+}
+
+function pedidoResumo(p) {
+  const items = getPedidoItemsFromOrder(p);
+  const first = items[0];
+  const base = first ? `${first.modeloNome || modelLabelByValue(first.modeloCodigo)}` : "Pedido";
+  const extra = items.length > 1 ? ` +${items.length - 1} modelo(s)` : "";
+  return `${base}${extra}`;
+}
+
+function orderSearchText(p) {
+  const items = getPedidoItemsFromOrder(p);
+  return [
+    p.id, p.dono, p.cliente, p.estado, p.cidade, p.pedidoTexto, p.obsPedido, p.expObs, p.status,
+    p.createdDate, p.createdTime, p.updatedDate, p.updatedTime, p.editedBy, p.editedDate, p.editedTime,
+    ...items.flatMap(item => [item.modeloCodigo, item.modeloNome, item.descricao])
+  ].map(v => String(v ?? "")).join(" ").toLowerCase();
 }
 
 function renderPedidosDono() {
@@ -560,51 +412,70 @@ function renderPedidosDono() {
   }
 
   lista.innerHTML = meus.map(p => {
-    const items = getPedidoItemsForDisplay(p);
-    const snippet = items.map(item => `${item.titulo}\n${item.texto}`).join("\n\n");
+    const items = getPedidoItemsFromOrder(p);
     return `
       <div class="pedido ${statusClass(p.status)}">
-        <div class="pedido-head">
-          <div>
-            <h3>${fmt(p.cliente || "")}</h3>
-            <div class="pedido-meta"><strong>${fmt(p.id)}</strong> • ${fmt(p.dono || "")}</div>
+        <div class="pedido-top">
+          <div class="pedido-top-left">
+            <div class="pedido-head">
+              <div>
+                <h3>${fmt(p.cliente || "")}</h3>
+                <div class="pedido-meta"><strong>${fmt(p.id)}</strong> • ${fmt(p.dono || "")}</div>
+              </div>
+              <div class="pedido-meta">
+                <div><strong>Enviado em:</strong> ${fmt(fmtCreated(p))}</div>
+                <div><strong>Atualizado:</strong> ${fmt(fmtUpdated(p))}</div>
+                <div><strong>${fmt(p.estado || "-")} / ${fmt(p.cidade || "-")}</strong></div>
+              </div>
+            </div>
+
+            <div class="pedido-preview">${fmt(pedidoResumo(p))}</div>
           </div>
-          <div class="pedido-meta">
-            <div><strong>Enviado em:</strong> ${fmt(fmtCreated(p))}</div>
-            <div><strong>Atualizado:</strong> ${fmt(fmtUpdated(p))}</div>
+          <div class="pedido-top-right">
+            <span class="chip ${chipClass(p.status)}">${fmt(statusLabel(p.status))}</span>
           </div>
         </div>
 
-        ${items.length ? `
-          <div class="pedido-text">
-            ${items.map((item, index) => `
-              <div class="model-line">
-                <div class="dot"></div>
-                <div>
-                  <strong>${fmt(item.titulo)}</strong>
-                  <div>${fmt(item.texto || "")}</div>
+        <div class="pedido-body open">
+          <div class="pedido-body-inner">
+            <div class="pedido-grid">
+              <div class="pedido-compact">
+                <div class="muted-card">
+                  <div class="small-label">Cliente</div>
+                  <div class="big-value">${fmt(p.cliente || "")}</div>
+                </div>
+                <div class="pedido-subgrid">
+                  <div class="muted-card">
+                    <div class="small-label">Estado</div>
+                    <div class="big-value">${fmt(p.estado || "-")}</div>
+                  </div>
+                  <div class="muted-card">
+                    <div class="small-label">Cidade</div>
+                    <div class="big-value">${fmt(p.cidade || "-")}</div>
+                  </div>
+                </div>
+                <div class="muted-card">
+                  <div class="small-label">Modelos</div>
+                  <div class="model-summary">${fmt(formatItemsText(items)).replace(/\n/g, "<br>")}</div>
+                </div>
+
+                ${p.obsPedido ? `<div class="obsBox"><strong>Observação do pedido</strong>${fmt(p.obsPedido).replace(/\n/g, "<br>")}</div>` : ""}
+                ${p.expObs ? `<div class="obsBox"><strong>Observação da expedição</strong>${fmt(p.expObs).replace(/\n/g, "<br>")}</div>` : ""}
+                ${p.editedBy ? `<div class="obsBox"><strong>Última edição</strong>${fmt(p.editedBy)}<br>${fmt(p.editedDate)} às ${fmt(p.editedTime)}</div>` : ""}
+
+                <div class="status-actions">
+                  <button class="btn btn-ghost" onclick="window.editarPedido('${p.id}')">Editar pedido</button>
+                  <button class="btn btn-danger" onclick="window.excluirPedido('${p.id}', 'dono')">Excluir pedido</button>
+                </div>
+
+                <div class="inline-note">
+                  ${p.status === "separado"
+                    ? "<strong>Pedido finalizado.</strong>"
+                    : "<strong>Pedido pendente.</strong> Ainda pode receber ajuste da expedição."}
                 </div>
               </div>
-              ${index < items.length - 1 ? '<div style="height:10px"></div>' : ''}
-            `).join("")}
+            </div>
           </div>
-        ` : `<div class="pedido-text">${fmt(p.pedidoTexto || "")}</div>`}
-
-        ${p.obsPedido ? `<div class="obsBox"><strong>Observação do pedido</strong>${fmt(p.obsPedido).replace(/\n/g, "<br>")}</div>` : ""}
-        ${p.expObs ? `<div class="obsBox"><strong>Observação da expedição</strong>${fmt(p.expObs).replace(/\n/g, "<br>")}</div>` : ""}
-        ${p.editedBy ? `<div class="obsBox"><strong>Última edição</strong>${fmt(p.editedBy)}<br>${fmt(p.editedDate)} às ${fmt(p.editedTime)}</div>` : ""}
-
-        <span class="chip ${chipClass(p.status)}">${fmt(statusLabel(p.status))}</span>
-
-        <div class="status-actions">
-          <button class="btn btn-ghost" data-edit-order="${fmt(p.id)}">Editar pedido</button>
-          <button class="btn btn-danger" data-delete-order="${fmt(p.id)}" data-origin="dono">Excluir pedido</button>
-        </div>
-
-        <div class="inline-note">
-          ${p.status === "separado"
-            ? "<strong>Pedido finalizado.</strong>"
-            : "<strong>Pedido pendente.</strong> Ainda pode receber ajuste da expedição."}
         </div>
       </div>
     `;
@@ -623,15 +494,7 @@ function filteredExpeditionOrders() {
     view = view.filter(p => p.status === statusFiltro);
   }
   if (busca) {
-    view = view.filter(p => {
-      const items = getPedidoItemsForDisplay(p);
-      const itemText = items.map(i => `${i.titulo} ${i.texto}`).join(" ");
-      const text = [
-        p.id, p.dono, p.cliente, p.pedidoTexto, itemText, p.obsPedido, p.expObs, p.status,
-        p.createdDate, p.createdTime, p.updatedDate, p.updatedTime, p.editedBy, p.editedDate, p.editedTime
-      ].map(v => String(v ?? "")).join(" ").toLowerCase();
-      return text.includes(busca);
-    });
+    view = view.filter(p => orderSearchText(p).includes(busca));
   }
   return view;
 }
@@ -642,196 +505,125 @@ function renderPedidosExp() {
 
   if (!view.length) {
     lista.innerHTML = `<div class="empty">Nenhum pedido encontrado com esses filtros.</div>`;
-    selectedExpeditionOrderId = null;
-    renderDetalheExpedicao();
     return;
-  }
-
-  if (!selectedExpeditionOrderId || !view.some(p => p.id === selectedExpeditionOrderId)) {
-    selectedExpeditionOrderId = view[0].id;
   }
 
   lista.innerHTML = view.map(p => {
     const st = p.status || "nao-visualizado";
-    const items = getPedidoItemsForDisplay(p);
-    const firstItem = items[0];
-    const extraCount = Math.max(0, items.length - 1);
-    const snippet = firstItem
-      ? `${firstItem.titulo}${firstItem.texto ? `\n${firstItem.texto.slice(0, 140)}${firstItem.texto.length > 140 ? "..." : ""}` : ""}${extraCount ? `\n+ ${extraCount} modelo(s) a mais` : ""}`
-      : String(p.pedidoTexto || "").slice(0, 180);
+    const items = getPedidoItemsFromOrder(p);
+    const open = expandedOrders.has(p.id) || !isCollapsedStatus(st);
     return `
-      <div class="order-card ${selectedExpeditionOrderId === p.id ? "active" : ""}" data-order-card="${fmt(p.id)}">
-        <div class="order-card-top">
-          <div>
-            <h4>${fmt(p.cliente || "Sem cliente")}</h4>
-            <div class="order-card-meta"><strong>${fmt(p.id)}</strong> • ${fmt(p.dono || "")}</div>
+      <div class="pedido ${statusClass(st)}">
+        <button class="pedido-top" type="button" onclick="window.togglePedidoExpedicao('${p.id}')">
+          <div class="pedido-top-left">
+            <div class="pedido-head">
+              <div>
+                <h3>${fmt(p.cliente || "")}</h3>
+                <div class="pedido-meta"><strong>${fmt(p.id)}</strong> • ${fmt(p.dono || "")}</div>
+              </div>
+              <div class="pedido-meta">
+                <div><strong>Enviado em:</strong> ${fmt(fmtCreated(p))}</div>
+                <div><strong>Atualizado:</strong> ${fmt(fmtUpdated(p))}</div>
+                <div><strong>${fmt(p.estado || "-")} / ${fmt(p.cidade || "-")}</strong></div>
+              </div>
+            </div>
+            <div class="pedido-preview">${fmt(pedidoResumo(p))}</div>
           </div>
-          <span class="chip ${chipClass(st)}">${fmt(statusLabel(st))}</span>
-        </div>
+          <div class="pedido-top-right">
+            <span class="chip ${chipClass(st)}">${fmt(statusLabel(st))}</span>
+            <span class="badge">${open ? "Ocultar" : "Abrir"}</span>
+          </div>
+        </button>
 
-        <div class="order-card-snippet">${fmt(snippet || "Sem detalhes do pedido.")}</div>
+        <div class="pedido-body ${open ? "open" : ""}" id="body-${p.id}">
+          <div class="pedido-body-inner">
+            <div class="pedido-grid">
+              <div class="pedido-subgrid">
+                <div class="muted-card">
+                  <div class="small-label">Cliente</div>
+                  <div class="big-value">${fmt(p.cliente || "")}</div>
+                </div>
+                <div class="muted-card">
+                  <div class="small-label">Origem</div>
+                  <div class="big-value">${fmt(p.estado || "-")} / ${fmt(p.cidade || "-")}</div>
+                </div>
+              </div>
 
-        <div class="order-card-actions">
-          <button class="btn btn-primary btn-mini" data-select-order="${fmt(p.id)}">Ver detalhes</button>
+              <div class="muted-card">
+                <div class="small-label">Modelos do pedido</div>
+                ${htmlItemsText(items)}
+              </div>
+
+              ${p.obsPedido ? `<div class="obsBox"><strong>Observação do pedido</strong>${fmt(p.obsPedido).replace(/\n/g, "<br>")}</div>` : ""}
+              ${p.editedBy ? `<div class="obsBox"><strong>Última edição</strong>${fmt(p.editedBy)}<br>${fmt(p.editedDate)} às ${fmt(p.editedTime)}</div>` : ""}
+
+              <div class="detail-box">
+                <div class="field">
+                  <label><strong>Status do pedido</strong></label>
+                  <select id="status-${p.id}" onchange="window.mostrarCampoObs('${p.id}', event)">
+                    <option value="nao-visualizado" ${st==="nao-visualizado" ? "selected" : ""}>Não visualizado</option>
+                    <option value="visualizado" ${st==="visualizado" ? "selected" : ""}>Visualizado</option>
+                    <option value="em-separacao" ${st==="em-separacao" ? "selected" : ""}>Em separação</option>
+                    <option value="falta-peca" ${st==="falta-peca" ? "selected" : ""}>Falta peça</option>
+                    <option value="separado" ${st==="separado" ? "selected" : ""}>Separado</option>
+                  </select>
+                </div>
+
+                <div id="obsWrap-${p.id}" style="margin-top:12px; ${st==="separado" ? "display:none;" : ""}">
+                  <div class="field">
+                    <label><strong>Observações da expedição</strong></label>
+                    <textarea id="obs-${p.id}" placeholder="Escreva o recado para o dono.">${fmt(p.expObs || "")}</textarea>
+                  </div>
+                  <div class="tiny">O campo aparece quando o status é diferente de “Separado”.</div>
+                </div>
+
+                <div class="status-actions">
+                  <button class="btn btn-primary" onclick="window.atualizarPedido('${p.id}')">Confirmar seleção</button>
+                  ${st === "separado" ? `<button class="btn btn-danger" onclick="window.excluirPedido('${p.id}', 'expedicao')">Excluir separado</button>` : ""}
+                </div>
+              </div>
+
+              <div class="inline-note">
+                ${st === "separado"
+                  ? "<strong>Pedido finalizado.</strong> Continua aparecendo no histórico até ser excluído."
+                  : "<strong>Pedido pendente.</strong> Só será finalizado quando a expedição marcar como separado."}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     `;
   }).join("");
-
-  renderDetalheExpedicao();
 }
 
-function renderDetalheExpedicao() {
-  const empty = $("detalheExpVazio");
-  const content = $("detalheExpConteudo");
-  const p = pedidos.find(x => x.id === selectedExpeditionOrderId);
+window.togglePedidoExpedicao = function(id) {
+  if (expandedOrders.has(id)) expandedOrders.delete(id);
+  else expandedOrders.add(id);
+  renderPedidosExp();
+};
 
-  if (!p) {
-    empty.classList.remove("hidden");
-    content.classList.add("hidden");
-    content.innerHTML = "";
-    return;
-  }
+window.mostrarCampoObs = function(id, event) {
+  if (event) event.stopPropagation();
+  const sel = document.getElementById(`status-${id}`);
+  const wrap = document.getElementById(`obsWrap-${id}`);
+  if (sel && wrap) wrap.style.display = sel.value === "separado" ? "none" : "block";
+};
 
-  empty.classList.add("hidden");
-  content.classList.remove("hidden");
-
-  const st = p.status || "nao-visualizado";
-  const items = getPedidoItemsForDisplay(p);
-
-  content.innerHTML = `
-    <div class="detail-content">
-      <div class="detail-summary">
-        <div>
-          <div class="tiny">Cliente</div>
-          <h4>${fmt(p.cliente || "Sem cliente")}</h4>
-          <div class="detail-meta">
-            <strong>${fmt(p.id)}</strong> • ${fmt(p.dono || "")}<br>
-            <strong>Enviado:</strong> ${fmt(fmtCreated(p))}<br>
-            <strong>Atualizado:</strong> ${fmt(fmtUpdated(p))}
-          </div>
-        </div>
-        <span class="chip ${chipClass(st)}">${fmt(statusLabel(st))}</span>
-      </div>
-
-      <div class="detail-section">
-        <h5>Modelos do pedido</h5>
-        <div class="detail-blocks">
-          ${items.length ? items.map((item, index) => `
-            <div class="detail-block">
-              <div class="detail-block-head">
-                <strong>${fmt(item.titulo || `Modelo ${index + 1}`)}</strong>
-                <span class="mini-badge">${index + 1}</span>
-              </div>
-              <div class="detail-pre">${fmt(item.texto || "Sem detalhes.")}</div>
-            </div>
-          `).join("") : `<div class="empty">Este pedido não tem blocos estruturados.</div>`}
-        </div>
-      </div>
-
-      ${p.obsPedido ? `
-        <div class="detail-section">
-          <h5>Observação do pedido</h5>
-          <div class="obsBox" style="margin-top:0">${fmt(p.obsPedido).replace(/\n/g, "<br>")}</div>
-        </div>
-      ` : ""}
-
-      ${p.editedBy ? `
-        <div class="detail-section">
-          <h5>Última edição</h5>
-          <div class="tiny"><strong>${fmt(p.editedBy)}</strong><br>${fmt(p.editedDate)} às ${fmt(p.editedTime)}</div>
-        </div>
-      ` : ""}
-
-      <div class="detail-section">
-        <h5>Status da expedição</h5>
-        <div class="detail-controls">
-          <div class="field">
-            <label for="statusDetalheExp">Atualize o status</label>
-            <select id="statusDetalheExp">
-              <option value="nao-visualizado" ${st === "nao-visualizado" ? "selected" : ""}>Não visualizado</option>
-              <option value="visualizado" ${st === "visualizado" ? "selected" : ""}>Visualizado</option>
-              <option value="em-separacao" ${st === "em-separacao" ? "selected" : ""}>Em separação</option>
-              <option value="falta-peca" ${st === "falta-peca" ? "selected" : ""}>Falta peça</option>
-              <option value="separado" ${st === "separado" ? "selected" : ""}>Separado</option>
-            </select>
-          </div>
-
-          <div class="field" id="obsWrapDetalheExp" style="${st === "separado" ? "display:none" : "display:flex"}">
-            <label for="obsDetalheExp">Observações da expedição</label>
-            <textarea id="obsDetalheExp" placeholder="Escreva o recado para o dono.">${fmt(p.expObs || "")}</textarea>
-            <div class="tiny">O campo aparece quando o status é diferente de “Separado”.</div>
-          </div>
-
-          <div class="detail-actions">
-            <button class="btn btn-primary" id="btnConfirmarDetalheExp">Confirmar seleção</button>
-            ${st === "separado" ? `<button class="btn btn-danger" id="btnExcluirDetalheExp">Excluir separado</button>` : ""}
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  $("statusDetalheExp").addEventListener("change", () => {
-    const sel = $("statusDetalheExp");
-    const wrap = $("obsWrapDetalheExp");
-    if (!sel || !wrap) return;
-    wrap.style.display = sel.value === "separado" ? "none" : "flex";
-  });
-
-  $("btnConfirmarDetalheExp").addEventListener("click", () => atualizarPedidoSelecionado());
-  const excluirBtn = $("btnExcluirDetalheExp");
-  if (excluirBtn) excluirBtn.addEventListener("click", () => excluirPedidoSelecionado());
-}
-
-function applyBlockChange(uidBlock, field, value) {
-  orderBlocks = orderBlocks.map(block => block.uid === uidBlock ? { ...block, [field]: value } : block);
-  renderPedidoComposer();
-}
-
-function addModelBlock(modelId) {
-  if (!MODEL_MAP.has(modelId)) return;
-  const existsIndex = orderBlocks.findIndex(block => block.modelId === modelId);
-  if (existsIndex >= 0) {
-    const el = document.querySelector(`[data-block="${orderBlocks[existsIndex].uid}"]`);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-      el.animate([
-        { boxShadow: "0 0 0 0 rgba(214,51,132,.0)" },
-        { boxShadow: "0 0 0 6px rgba(214,51,132,.12)" },
-        { boxShadow: "0 0 0 0 rgba(214,51,132,.0)" }
-      ], { duration: 700 });
-    }
-    return;
-  }
-  orderBlocks = [...orderBlocks, createBlock(modelId, "")];
-  renderPedidoComposer();
-  requestAnimationFrame(() => {
-    const block = orderBlocks[orderBlocks.length - 1];
-    const el = document.querySelector(`[data-block="${block.uid}"]`);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-      const textarea = el.querySelector("textarea");
-      if (textarea) textarea.focus();
-    }
-  });
-}
-
-async function atualizarPedidoSelecionado() {
+window.atualizarPedido = async function(id) {
   try {
     if (!session || session.perfil !== "expedicao") {
       alert("Você precisa estar logado como Expedição.");
       return;
     }
 
-    const p = pedidos.find(x => x.id === selectedExpeditionOrderId);
+    const p = pedidos.find(x => x.id === id);
     if (!p) {
       alert("Pedido não encontrado.");
       return;
     }
 
-    const st = $("statusDetalheExp")?.value || p.status || "nao-visualizado";
-    const obs = ($("obsDetalheExp")?.value || "").trim();
+    const st = document.getElementById(`status-${id}`)?.value || p.status || "nao-visualizado";
+    const obs = (document.getElementById(`obs-${id}`)?.value || "").trim();
 
     if (st === "falta-peca" && !obs) {
       alert("Preencha a observação para informar o que está faltando.");
@@ -840,7 +632,7 @@ async function atualizarPedidoSelecionado() {
 
     const now = nowParts();
 
-    await updateDoc(doc(db, "pedidos", p.id), {
+    await updateDoc(doc(db, "pedidos", id), {
       status: st,
       expObs: st === "separado" ? "" : obs,
       updatedAt: serverTimestamp(),
@@ -852,279 +644,9 @@ async function atualizarPedidoSelecionado() {
     console.error(e);
     alert("Não foi possível atualizar o pedido.");
   }
-}
+};
 
-async function excluirPedidoSelecionado() {
-  try {
-    if (!session || session.perfil !== "expedicao") {
-      alert("Você precisa estar logado como Expedição.");
-      return;
-    }
-    const p = pedidos.find(x => x.id === selectedExpeditionOrderId);
-    if (!p) {
-      alert("Pedido não encontrado.");
-      return;
-    }
-    if ((p.status || "") !== "separado") {
-      alert("A expedição só pode excluir pedidos que já foram separados.");
-      return;
-    }
-    if (!confirm("Tem certeza que deseja excluir este pedido?")) return;
-    await deleteDoc(doc(db, "pedidos", p.id));
-  } catch (e) {
-    console.error(e);
-    alert("Não foi possível excluir o pedido.");
-  }
-}
-
-function loadOrderIntoComposer(p) {
-  const blocks = getPedidoBlocksFromPedido(p);
-  orderBlocks = blocks.length ? blocks : [createBlock("001")];
-  renderPedidoComposer();
-}
-
-function clearComposer() {
-  editandoId = null;
-  $("cliente").value = "";
-  $("obsPedido").value = "";
-  orderBlocks = [createBlock("001")];
-  renderPedidoComposer();
-  clearEditMode();
-}
-
-function validateOrderBlocks() {
-  if (!orderBlocks.length) return "Adicione pelo menos um modelo ao pedido.";
-  for (const [index, block] of orderBlocks.entries()) {
-    if (!String(block.texto || "").trim()) {
-      return `Preencha a grade do modelo ${index + 1} (${getModelLabel(block.modelId)}).`;
-    }
-  }
-  return "";
-}
-
-function setupEvents() {
-  $("perfilLogin").addEventListener("change", showLoginFields);
-
-  $("btnEntrar").addEventListener("click", () => {
-    session = $("perfilLogin").value === "dono"
-      ? { perfil: "dono", nome: $("nomeDono").value }
-      : { perfil: "expedicao", nome: "Expedição" };
-    saveSession();
-    renderAll();
-  });
-
-  $("btnSairDono").addEventListener("click", () => {
-    session = null;
-    saveSession();
-    renderAll();
-  });
-
-  $("btnSairExp").addEventListener("click", () => {
-    session = null;
-    saveSession();
-    renderAll();
-  });
-
-  $("btnEscolherModelo").addEventListener("click", () => {
-    pickerOpen = !pickerOpen;
-    renderPedidoComposer();
-  });
-
-  $("btnLimparModelos").addEventListener("click", () => {
-    orderBlocks = [createBlock("001")];
-    renderPedidoComposer();
-  });
-
-  $("pedidoBlocks").addEventListener("input", (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLTextAreaElement)) return;
-    const uidBlock = target.getAttribute("data-block-text");
-    if (!uidBlock) return;
-    orderBlocks = orderBlocks.map(block => block.uid === uidBlock ? { ...block, texto: target.value } : block);
-    renderPedidoPreviewOnly();
-  });
-
-  $("pedidoBlocks").addEventListener("change", (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLSelectElement)) return;
-    const uidBlock = target.getAttribute("data-model-select");
-    if (!uidBlock) return;
-    orderBlocks = orderBlocks.map(block => block.uid === uidBlock ? { ...block, modelId: target.value } : block);
-    renderPedidoComposer();
-  });
-
-  $("pedidoBlocks").addEventListener("click", (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) return;
-
-    const removeUid = target.getAttribute("data-remove-block");
-    if (removeUid) {
-      if (orderBlocks.length === 1) {
-        orderBlocks = [createBlock("001")];
-      } else {
-        orderBlocks = orderBlocks.filter(block => block.uid !== removeUid);
-      }
-      renderPedidoComposer();
-      return;
-    }
-  });
-
-  $("modeloPicker").addEventListener("click", (event) => {
-    const target = event.target instanceof HTMLElement ? event.target.closest("[data-add-model]") : null;
-    if (!target) return;
-    const modelId = target.getAttribute("data-add-model");
-    if (!modelId) return;
-    addModelBlock(modelId);
-  });
-
-  $("btnEnviarPedido").addEventListener("click", async () => {
-    try {
-      if (!session || session.perfil !== "dono") {
-        alert("Você precisa estar logado como Vendas.");
-        return;
-      }
-
-      const cliente = $("cliente").value.trim();
-      const obsPedido = $("obsPedido").value.trim();
-
-      if (!cliente) {
-        alert("Preencha o cliente.");
-        return;
-      }
-
-      const blockError = validateOrderBlocks();
-      if (blockError) {
-        alert(blockError);
-        return;
-      }
-
-      const pedidoItens = normalizeOrderItems(orderBlocks);
-      const pedidoTexto = buildPedidoTextoFromBlocks(orderBlocks);
-      const now = nowParts();
-
-      if (editandoId) {
-        const p = pedidos.find(x => x.id === editandoId);
-        if (!p) {
-          alert("Pedido não encontrado.");
-          clearEditMode();
-          return;
-        }
-        if (p.dono !== session.nome) {
-          alert("Você só pode editar os seus próprios pedidos.");
-          clearEditMode();
-          return;
-        }
-
-        await updateDoc(doc(db, "pedidos", editandoId), {
-          cliente,
-          pedidoTexto,
-          pedidoItens,
-          obsPedido,
-          status: "nao-visualizado",
-          expObs: "",
-          editedBy: session.nome,
-          editedDate: now.date,
-          editedTime: now.time,
-          editedAtMs: Date.now(),
-          updatedAt: serverTimestamp(),
-          updatedAtMs: Date.now(),
-          updatedDate: now.date,
-          updatedTime: now.time
-        });
-
-        notify("Pedido editado", `Pedido ${p.id} alterado por ${session.nome}.`);
-        clearComposer();
-      } else {
-        await addDoc(pedidosRef, {
-          dono: session.nome,
-          cliente,
-          pedidoTexto,
-          pedidoItens,
-          obsPedido,
-          status: "nao-visualizado",
-          expObs: "",
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          createdAtMs: Date.now(),
-          updatedAtMs: Date.now(),
-          createdDate: now.date,
-          createdTime: now.time,
-          updatedDate: now.date,
-          updatedTime: now.time,
-          editedBy: "",
-          editedDate: "",
-          editedTime: "",
-          editedAtMs: 0
-        });
-        clearComposer();
-      }
-    } catch (e) {
-      console.error(e);
-      alert(editandoId ? "Não foi possível salvar as alterações." : "Não foi possível enviar o pedido.");
-    }
-  });
-
-  $("btnCancelarEdicao").addEventListener("click", () => {
-    clearComposer();
-  });
-
-  $("btnExemplo").addEventListener("click", () => {
-    $("cliente").value = "Loja Exemplo";
-    $("obsPedido").value = "Separar com prioridade.";
-    orderBlocks = [
-      createBlock("001", "50 P preto\n100 M azul"),
-      createBlock("002", "20 G branco\n15 M chocolate"),
-      createBlock("005.2", "10 M preto c/ renda\n5 G rosê")
-    ];
-    renderPedidoComposer();
-  });
-
-  $("btnPendentes").addEventListener("click", () => {
-    filtroExpedicao = "pendentes";
-    renderExpedicao();
-  });
-
-  $("btnTodos").addEventListener("click", () => {
-    filtroExpedicao = "todos";
-    renderExpedicao();
-  });
-
-  $("searchExp").addEventListener("input", renderPedidosExp);
-  $("filterStatus").addEventListener("change", renderPedidosExp);
-
-  $("btnAtivarNotificacoesLogin").addEventListener("click", ativarNotificacoes);
-  $("btnAtivarNotificacoesDono").addEventListener("click", ativarNotificacoes);
-  $("btnAtivarNotificacoesExp").addEventListener("click", ativarNotificacoes);
-
-  document.addEventListener("click", (event) => {
-    const target = event.target instanceof HTMLElement ? event.target : null;
-    if (!target) return;
-
-    const editId = target.getAttribute("data-edit-order");
-    if (editId) {
-      editarPedido(editId);
-      return;
-    }
-
-    const deleteId = target.getAttribute("data-delete-order");
-    const origin = target.getAttribute("data-origin");
-    if (deleteId && origin) {
-      excluirPedido(deleteId, origin);
-      return;
-    }
-
-    const selectOrder = target.getAttribute("data-select-order");
-    if (selectOrder) {
-      selectedExpeditionOrderId = selectOrder;
-      renderPedidosExp();
-      const card = document.querySelector(`[data-order-card="${CSS.escape(selectOrder)}"]`);
-      if (card) card.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      return;
-    }
-  });
-}
-
-function editarPedido(id) {
+window.editarPedido = function(id) {
   const p = pedidos.find(x => x.id === id);
   if (!session || session.perfil !== "dono") {
     alert("Você precisa estar logado como Vendas.");
@@ -1137,13 +659,26 @@ function editarPedido(id) {
 
   editandoId = id;
   $("cliente").value = p.cliente || "";
+  $("estado").value = p.estado || "";
+  $("cidade").value = p.cidade || "";
   $("obsPedido").value = p.obsPedido || "";
-  loadOrderIntoComposer(p);
+  setModelBlocksFromItems(getModelBlocksFromOrder(p));
   renderEditBox();
   $("cliente").focus();
+};
+
+function getModelBlocksFromOrder(p) {
+  if (Array.isArray(p.itensPedido) && p.itensPedido.length) {
+    return p.itensPedido.map(item => ({
+      modeloCodigo: item.modeloCodigo || "001",
+      modeloNome: item.modeloNome || modelLabelByValue(item.modeloCodigo) || "",
+      descricao: item.descricao || ""
+    }));
+  }
+  return legacyToItems(p.pedidoTexto || "");
 }
 
-async function excluirPedido(id, origem) {
+window.excluirPedido = async function(id, origem) {
   try {
     const p = pedidos.find(x => x.id === id);
     if (!p) {
@@ -1178,13 +713,19 @@ async function excluirPedido(id, origem) {
     await deleteDoc(doc(db, "pedidos", id));
 
     if (editandoId === id) {
-      clearComposer();
+      clearEditMode();
+      $("cliente").value = "";
+      $("estado").value = "";
+      $("cidade").value = "";
+      $("obsPedido").value = "";
+      $("pedidoBlocos").innerHTML = "";
+      addModelBlock({ modeloCodigo: "001", descricao: "" });
     }
   } catch (e) {
     console.error(e);
     alert("Não foi possível excluir o pedido.");
   }
-}
+};
 
 async function ativarNotificacoes() {
   try {
@@ -1221,11 +762,175 @@ async function ativarNotificacoes() {
   }
 }
 
+function markOpenBehaviorForNewOrders() {
+  // do not auto-expand everything; let the user click.
+}
+
 onMessage(messaging, (payload) => {
   const title = payload?.notification?.title || "Atualização do pedido";
   const body = payload?.notification?.body || "Você recebeu uma atualização.";
   notify(title, body);
 });
+
+function setupEvents() {
+  $("perfilLogin").addEventListener("change", showLoginFields);
+
+  $("btnEntrar").addEventListener("click", () => {
+    session = $("perfilLogin").value === "dono"
+      ? { perfil: "dono", nome: $("nomeDono").value }
+      : { perfil: "expedicao", nome: "Expedição" };
+    saveSession();
+    renderAll();
+  });
+
+  $("btnSairDono").addEventListener("click", () => {
+    session = null;
+    saveSession();
+    renderAll();
+  });
+
+  $("btnSairExp").addEventListener("click", () => {
+    session = null;
+    saveSession();
+    renderAll();
+  });
+
+  $("btnEnviarPedido").addEventListener("click", async () => {
+    try {
+      if (!session || session.perfil !== "dono") {
+        alert("Você precisa estar logado como Vendas.");
+        return;
+      }
+
+      const cliente = $("cliente").value.trim();
+      const estado = $("estado").value.trim();
+      const cidade = $("cidade").value.trim();
+      const obsPedido = $("obsPedido").value.trim();
+      const items = getModelBlocksData();
+
+      if (!cliente || !estado || !cidade) {
+        alert("Preencha o cliente, o estado e a cidade.");
+        return;
+      }
+
+      const validItems = items.filter(item => item.modeloCodigo || item.descricao);
+      if (!validItems.length) {
+        alert("Adicione ao menos um modelo ao pedido.");
+        return;
+      }
+
+      const now = nowParts();
+      const pedidoTexto = formatItemsText(validItems);
+
+      if (editandoId) {
+        const p = pedidos.find(x => x.id === editandoId);
+        if (!p) {
+          alert("Pedido não encontrado.");
+          clearEditMode();
+          return;
+        }
+        if (p.dono !== session.nome) {
+          alert("Você só pode editar os seus próprios pedidos.");
+          clearEditMode();
+          return;
+        }
+
+        await updateDoc(doc(db, "pedidos", editandoId), {
+          cliente,
+          estado,
+          cidade,
+          itensPedido: validItems,
+          pedidoTexto,
+          obsPedido,
+          status: "nao-visualizado",
+          expObs: "",
+          editedBy: session.nome,
+          editedDate: now.date,
+          editedTime: now.time,
+          editedAtMs: Date.now(),
+          updatedAt: serverTimestamp(),
+          updatedAtMs: Date.now(),
+          updatedDate: now.date,
+          updatedTime: now.time
+        });
+
+        notify("Pedido editado", `Pedido ${p.id} alterado por ${session.nome}.`);
+        clearEditMode();
+      } else {
+        await addDoc(pedidosRef, {
+          dono: session.nome,
+          cliente,
+          estado,
+          cidade,
+          itensPedido: validItems,
+          pedidoTexto,
+          obsPedido,
+          status: "nao-visualizado",
+          expObs: "",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          createdAtMs: Date.now(),
+          updatedAtMs: Date.now(),
+          createdDate: now.date,
+          createdTime: now.time,
+          updatedDate: now.date,
+          updatedTime: now.time,
+          editedBy: "",
+          editedDate: "",
+          editedTime: "",
+          editedAtMs: 0
+        });
+      }
+
+      $("cliente").value = "";
+      $("estado").value = "";
+      $("cidade").value = "";
+      $("obsPedido").value = "";
+      $("pedidoBlocos").innerHTML = "";
+      addModelBlock({ modeloCodigo: "001", descricao: "" });
+    } catch (e) {
+      console.error(e);
+      alert(editandoId ? "Não foi possível salvar as alterações." : "Não foi possível enviar o pedido.");
+    }
+  });
+
+  $("btnCancelarEdicao").addEventListener("click", () => {
+    clearEditMode();
+    $("cliente").value = "";
+    $("estado").value = "";
+    $("cidade").value = "";
+    $("obsPedido").value = "";
+    $("pedidoBlocos").innerHTML = "";
+    addModelBlock({ modeloCodigo: "001", descricao: "" });
+  });
+
+  $("btnExemplo").addEventListener("click", () => {
+    $("cliente").value = "Loja Exemplo";
+    $("estado").value = "Ceará";
+    $("cidade").value = "Juazeiro do Norte";
+    $("obsPedido").value = "Separar com prioridade.";
+    $("pedidoBlocos").innerHTML = "";
+    addModelBlock({ modeloCodigo: "001", descricao: "50 P preto\n100 M azul" });
+    addModelBlock({ modeloCodigo: "002", descricao: "20 G branco" });
+  });
+
+  $("btnPendentes").addEventListener("click", () => {
+    filtroExpedicao = "pendentes";
+    renderExpedicao();
+  });
+
+  $("btnTodos").addEventListener("click", () => {
+    filtroExpedicao = "todos";
+    renderExpedicao();
+  });
+
+  $("searchExp").addEventListener("input", renderPedidosExp);
+  $("filterStatus").addEventListener("change", renderPedidosExp);
+
+  $("btnAtivarNotificacoesLogin").addEventListener("click", ativarNotificacoes);
+  $("btnAtivarNotificacoesDono").addEventListener("click", ativarNotificacoes);
+  $("btnAtivarNotificacoesExp").addEventListener("click", ativarNotificacoes);
+}
 
 onSnapshot(pedidosRef, (snapshot) => {
   const next = new Map();
@@ -1238,10 +943,6 @@ onSnapshot(pedidosRef, (snapshot) => {
   snapshot.forEach(d => next.set(d.id, { id: d.id, ...d.data() }));
   pedidos = [...next.values()];
   renderAll();
-
-  if (selectedExpeditionOrderId && !pedidos.some(p => p.id === selectedExpeditionOrderId)) {
-    selectedExpeditionOrderId = pedidos[0]?.id || null;
-  }
 
   if (initialized) {
     for (const ch of changes) {
@@ -1256,7 +957,9 @@ onSnapshot(pedidosRef, (snapshot) => {
           o.editedAtMs !== n.editedAtMs ||
           o.pedidoTexto !== n.pedidoTexto ||
           o.obsPedido !== n.obsPedido ||
-          o.cliente !== n.cliente;
+          o.cliente !== n.cliente ||
+          o.estado !== n.estado ||
+          o.cidade !== n.cidade;
 
         if (statusChanged) {
           notify("Status atualizado", `${n.cliente || "Pedido"} agora está: ${statusLabel(n.status)}.`);
@@ -1273,5 +976,7 @@ onSnapshot(pedidosRef, (snapshot) => {
 
 setupEvents();
 showLoginFields();
-renderPedidoComposer();
+if (!document.querySelector("#pedidoBlocos .model-block")) {
+  addModelBlock({ modeloCodigo: "001", descricao: "" });
+}
 renderAll();
