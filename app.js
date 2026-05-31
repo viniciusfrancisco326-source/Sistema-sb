@@ -255,27 +255,6 @@ function renderPedidoComposer() {
 
   container.innerHTML = composerBlocks.map((data, index) => createModelBlock(data, index).outerHTML).join("");
 
-  container.querySelectorAll(".remove-model").forEach(btn => {
-    btn.addEventListener("click", () => {
-      syncComposerFromDOM();
-      if (composerBlocks.length > 1) composerBlocks.pop();
-      else composerBlocks = [{ modeloCodigo: "001", descricao: "" }];
-      renderPedidoComposer();
-    });
-  });
-
-  container.querySelectorAll(".add-model-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      syncComposerFromDOM();
-     composerBlocks.push({ modeloCodigo: "", descricao: "" });
-      renderPedidoComposer();
-      requestAnimationFrame(() => {
-        const last = $("pedidoBlocos").querySelector(".model-block:last-child .model-notes");
-        if (last) last.focus();
-      });
-    });
-  });
-
   container.querySelectorAll(".model-select").forEach(sel => sel.addEventListener("change", syncComposerFromDOM));
   container.querySelectorAll(".model-notes").forEach(txt => txt.addEventListener("input", syncComposerFromDOM));
 }
@@ -733,11 +712,27 @@ function setupEvents() {
       });
       return;
     }
-    if (remove) {
-      syncComposerFromDOM();
-      if (composerBlocks.length > 1) composerBlocks.pop();
-      else composerBlocks = [{ modeloCodigo: "001", descricao: "" }];
-      renderPedidoComposer();
+   if (remove) {
+  syncComposerFromDOM();
+
+  const bloco = remove.closest(".model-block");
+  const todos = [...document.querySelectorAll("#pedidoBlocos .model-block")];
+
+  const index = todos.indexOf(bloco);
+
+  if (index > -1) {
+    composerBlocks.splice(index, 1);
+  }
+
+  if (!composerBlocks.length) {
+    composerBlocks = [{
+      modeloCodigo: "001",
+      descricao: ""
+    }];
+  }
+
+  renderPedidoComposer();
+};
     }
   });
   $("pedidoBlocos").addEventListener("input", syncComposerFromDOM);
