@@ -684,7 +684,7 @@ async function ativarNotificacoes() {
     // ATENÇÃO: Adicione aqui a sua chave pública (VAPID) quando ativar o FCM no painel do Firebase
     const token = await getToken(messaging, { 
       serviceWorkerRegistration: registration,
-      vapidKey: "SUA_CHAVE_COMPLETA_VAPID_AQUI" 
+      vapidKey: "BDVu28sh9HEnNldgXDZtOoaAfy4tkRgcKAlyBnIR3pIh5IBXu2w4nRot45OYZbV2DyKmxl4GVOnox06xdEykeio" 
     });
 
     if (token) {
