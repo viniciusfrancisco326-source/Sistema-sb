@@ -10,22 +10,26 @@ import {
   onSnapshot,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getMessaging,
+  getToken
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
 
 // ==========================================
-// 1. ESCREVA SUAS NOVAS CREDENCIAIS AQUI
+// CREDENCIAIS DO SEU NOVO FIREBASE
 // ==========================================
-// Substitua o bloco abaixo pelo bloco completo que o Firebase te deu no Passo 4!
 const firebaseConfig = {
   apiKey: "AIzaSyCowmhL0Iy3R-dkyLy2uJG-HyHYbnQV3cY",
   authDomain: "sistema-sb-expedicao.firebaseapp.com",
   projectId: "sistema-sb-expedicao",
-  storageBucket: sistema-sb-expedicao.firebasestorage.app",
+  storageBucket: "sistema-sb-expedicao.firebasestorage.app",
   messagingSenderId: "440742684804",
   appId: "1:440742684804:web:3832473a00978511683ad1"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const messaging = getMessaging(app);
 const pedidosRef = collection(db, "pedidos");
 
 const SESSION_KEY = "sistema_sou_bela_sessao_v13";
@@ -113,6 +117,22 @@ function fmtUpdated(p) {
 function notify(title, body) {
   if (Notification.permission === "granted") {
     try { new Notification(title, { body, icon: "Sou Bela -logo (3).png" }); } catch {}
+  }
+}
+
+async function salvarTokenUsuario(token) {
+  if (!session) return;
+  try {
+    const ref = doc(db, "usuarios", session.nome);
+    await setDoc(ref, {
+      nome: session.nome,
+      perfil: session.perfil,
+      tokenNotification: token,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    console.log("Token salvo com sucesso para:", session.nome);
+  } catch (e) {
+    console.error("Erro ao salvar o token no banco:", e);
   }
 }
 
@@ -658,10 +678,24 @@ async function ativarNotificacoes() {
       return;
     }
 
-    alert("Notificações ativadas neste navegador.");
+    // Registra o Service Worker e gera o Token em segundo plano (Estilo WhatsApp)
+    const registration = await navigator.serviceWorker.register("firebase-messaging-sw.js");
+    
+    // ATENÇÃO: Adicione aqui a sua chave pública (VAPID) quando ativar o FCM no painel do Firebase
+    const token = await getToken(messaging, { 
+      serviceWorkerRegistration: registration,
+      vapidKey: "SUA_CHAVE_COMPLETA_VAPID_AQUI" 
+    });
+
+    if (token) {
+      await salvarTokenUsuario(token);
+      alert("Notificações em segundo plano ativadas!");
+    } else {
+      alert("Permissão concedida, mas falha ao gerar o código do dispositivo.");
+    }
   } catch (err) {
     console.error(err);
-    alert("Não foi possível ativar as notificações.");
+    alert("Não foi possível ativar as notificações completas.");
   }
 }
 
@@ -879,50 +913,9 @@ function setupEvents() {
 
 onSnapshot(pedidosRef, (snapshot) => {
   const next = new Map();
-  const changes = snapshot.docChanges().map(c => ({
-    type: c.type,
-    id: c.doc.id,
-    data: { id: c.doc.id, ...c.doc.data() }
-  }));
-
   snapshot.forEach(d => next.set(d.id, { id: d.id, ...d.data() }));
   pedidos = [...next.values()];
   renderAll();
-
-  if (initialized) {
-    for (const ch of changes) {
-      const n = ch.data;
-      const o = prevMap.get(ch.id);
-
-      // --- CRITÉRIO 1: NOTIFICAÇÃO PARA A EXPEDIÇÃO ---
-      if (session && session.perfil === "expedicao") {
-        if (ch.type === "added") {
-          notify(
-            `📦 Novo pedido de ${n.dono || "Vendas"}`, 
-            `Cliente: ${n.cliente || "Não informado"} \nDestino: ${n.cidade || ""}-${n.estado || ""}`
-          );
-        }
-      }
-
-      // --- CRITÉRIO 2: NOTIFICAÇÕES PARA OS VENDEDORES (DONO) ---
-      if (session && session.perfil === "dono") {
-        // Garante que o Fabio só receba do Fabio e a Dona Lene só da Dona Lene
-        if (n.dono === session.nome) {
-          if (ch.type === "modified" && o) {
-            const statusChanged = o.status !== n.status;
-            
-            if (statusChanged) {
-              notify(
-                `🔔 Status Atualizado!`, 
-                `Seu pedido para ${n.cliente} mudou para: ${statusLabel(n.status)}.`
-              );
-            }
-          }
-        }
-      }
-    }
-  }
-
   prevMap = next;
   initialized = true;
 });
