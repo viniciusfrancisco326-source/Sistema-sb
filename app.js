@@ -6,55 +6,29 @@ import {
   updateDoc,
   deleteDoc,
   doc,
-  getDoc,
   setDoc,
   onSnapshot,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import {
-  getMessaging,
-  getToken,
-  onMessage
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
 
+// ==========================================
+// 1. ESCREVA SUAS NOVAS CREDENCIAIS AQUI
+// ==========================================
+// Substitua o bloco abaixo pelo bloco completo que o Firebase te deu no Passo 4!
 const firebaseConfig = {
-  apiKey: "AIzaSyAB09oj91RuaytI8AIfFrXc1mYESnGPr9o",
-  authDomain: "sistema-soubela.firebaseapp.com",
-  projectId: "sistema-soubela",
-  storageBucket: "sistema-soubela.firebasestorage.app",
-  messagingSenderId: "625696420183",
-  appId: "1:625696420183:web:7d264c60c9d2fd4cbcce12"
+  apiKey: "AIzaSyCowmhL0Iy3R-dkyLy2uJG-HyHYbnQV3cY",
+  authDomain: "sistema-sb-expedicao.firebaseapp.com",
+  projectId: "sistema-sb-expedicao",
+  storageBucket: sistema-sb-expedicao.firebasestorage.app",
+  messagingSenderId: "440742684804",
+  appId: "1:440742684804:web:3832473a00978511683ad1"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const messaging = getMessaging(app);
 const pedidosRef = collection(db, "pedidos");
-async function salvarTokenUsuario(token) {
-  if (!session) return;
-
-  try {
-    const ref = doc(db, "usuarios", session.nome);
-
-    await setDoc(
-      ref,
-      {
-        nome: session.nome,
-        perfil: session.perfil,
-        token: token
-      },
-      { merge: true }
-    );
-
-    console.log("Token salvo:", session.nome);
-  } catch (e) {
-    console.error("Erro ao salvar token:", e);
-  }
-}
 
 const SESSION_KEY = "sistema_sou_bela_sessao_v13";
-const TOKEN_KEY = "sistema_sou_bela_fcm_token_v1";
-const VAPID_KEY = "BBI6UqpLddFpOVjDHyb29d5qe8xPSXjX38rDRI46ZM6LKS1LZUyjNJYhIl8z0_suwYoYKjQPkmo-l8pGRzqrhwA";
 
 const STATUS = {
   "nao-visualizado": { label: "Não visualizado", cls: "nao-visualizado", chip: "red" },
@@ -135,6 +109,7 @@ function fmtCreated(p) {
 function fmtUpdated(p) {
   return p.updatedDate && p.updatedTime ? `${p.updatedDate} às ${p.updatedTime}` : (p.updatedDate || "-");
 }
+
 function notify(title, body) {
   if (Notification.permission === "granted") {
     try { new Notification(title, { body, icon: "Sou Bela -logo (3).png" }); } catch {}
@@ -683,34 +658,12 @@ async function ativarNotificacoes() {
       return;
     }
 
-    if ("serviceWorker" in navigator) {
-      try {
-        const reg = await navigator.serviceWorker.register("./firebase-messaging-sw.js");
-        const token = await getToken(messaging, {
-          vapidKey: VAPID_KEY,
-          serviceWorkerRegistration: reg
-        });
-        if (token) {
-  localStorage.setItem(TOKEN_KEY, token);
-  await salvarTokenUsuario(token);
-}
-      } catch (err) {
-        console.warn("Erro ao registrar service worker/FCM:", err);
-      }
-    }
-
     alert("Notificações ativadas neste navegador.");
   } catch (err) {
     console.error(err);
     alert("Não foi possível ativar as notificações.");
   }
 }
-
-onMessage(messaging, (payload) => {
-  const title = payload?.notification?.title || "Atualização do pedido";
-  const body = payload?.notification?.body || "Você recebeu uma atualização.";
-  notify(title, body);
-});
 
 function setupEvents() {
   $("perfilLogin").addEventListener("change", showLoginFields);
@@ -720,16 +673,15 @@ function setupEvents() {
     ? { perfil: "dono", nome: $("nomeDono").value }
     : { perfil: "expedicao", nome: "Expedição" };
 
-  saveSession();
-  renderAll();
+    saveSession();
+    renderAll();
 
-  try {
-    await ativarNotificacoes();
-  } catch (e) {
-    console.log(e);
-  }
-
-});
+    try {
+      await ativarNotificacoes();
+    } catch (e) {
+      console.log(e);
+    }
+  });
 
   $("btnSairDono").addEventListener("click", () => {
     session = null;
@@ -856,7 +808,6 @@ function setupEvents() {
           updatedTime: now.time
         });
 
-        notify("Pedido editado", `Pedido ${p.id} alterado por ${session.nome}.`);
         clearEditMode();
       } else {
         await addDoc(pedidosRef, {
@@ -943,22 +894,30 @@ onSnapshot(pedidosRef, (snapshot) => {
       const n = ch.data;
       const o = prevMap.get(ch.id);
 
-      if (ch.type === "added") {
-        notify("Novo pedido", `${n.cliente || "Pedido novo"} enviado por ${n.dono || ""}.`);
-      } else if (ch.type === "modified" && o) {
-        const statusChanged = o.status !== n.status;
-        const editChanged =
-          o.editedAtMs !== n.editedAtMs ||
-          o.pedidoTexto !== n.pedidoTexto ||
-          o.obsPedido !== n.obsPedido ||
-          o.cliente !== n.cliente ||
-          o.estado !== n.estado ||
-          o.cidade !== n.cidade;
+      // --- CRITÉRIO 1: NOTIFICAÇÃO PARA A EXPEDIÇÃO ---
+      if (session && session.perfil === "expedicao") {
+        if (ch.type === "added") {
+          notify(
+            `📦 Novo pedido de ${n.dono || "Vendas"}`, 
+            `Cliente: ${n.cliente || "Não informado"} \nDestino: ${n.cidade || ""}-${n.estado || ""}`
+          );
+        }
+      }
 
-        if (statusChanged) {
-          notify("Status atualizado", `${n.cliente || "Pedido"} agora está: ${statusLabel(n.status)}.`);
-        } else if (editChanged) {
-          notify("Pedido editado", `${n.cliente || "Pedido"} foi alterado por ${n.editedBy || "alguém"}.`);
+      // --- CRITÉRIO 2: NOTIFICAÇÕES PARA OS VENDEDORES (DONO) ---
+      if (session && session.perfil === "dono") {
+        // Garante que o Fabio só receba do Fabio e a Dona Lene só da Dona Lene
+        if (n.dono === session.nome) {
+          if (ch.type === "modified" && o) {
+            const statusChanged = o.status !== n.status;
+            
+            if (statusChanged) {
+              notify(
+                `🔔 Status Atualizado!`, 
+                `Seu pedido para ${n.cliente} mudou para: ${statusLabel(n.status)}.`
+              );
+            }
+          }
         }
       }
     }
