@@ -27,8 +27,6 @@ const db = getFirestore(app);
 const pedidosRef = collection(db, "pedidos");
 
 const SESSION_KEY = "sistema_sou_bela_sessao_v13";
-
-// COLQUE SEU APP ID DO ONESIGNAL AQUI
 const ONESIGNAL_APP_ID = "000b8540-c342-4450-8ab0-797bbc3e7313"; 
 
 const STATUS = {
@@ -111,28 +109,21 @@ function fmtUpdated(p) {
   return p.updatedDate && p.updatedTime ? `${p.updatedDate} às ${p.updatedTime}` : (p.updatedDate || "-");
 }
 
-// Vincula o celular ao nome do usuário logado no OneSignal
 function vincularUsuarioOneSignal() {
   if (!session || typeof OneSignal === "undefined") return;
   
   OneSignal.Deferred.push(function() {
-    // Define uma etiqueta para sabermos de quem é esse celular
     OneSignal.User.addTag("usuario_nome", session.nome);
     OneSignal.User.addTag("usuario_perfil", session.perfil);
-    console.log("Celular vinculado no OneSignal para:", session.nome);
+    console.log("Segmentado no OneSignal como:", session.nome);
   });
 }
 
-// Dispara a notificação em segundo plano usando a API gratuita deles
 async function enviarPushOneSignal(filtroTag, filtroValor, titulo, mensagem) {
-  if (ONESIGNAL_APP_ID === "SEU_APP_ID_DO_ONESIGNAL_AQUI") return;
-  
   try {
     await fetch("https://onesignal.com/api/v1/notifications", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json; charset=utf-8"
-      },
+      headers: { "Content-Type": "application/json; charset=utf-8" },
       body: JSON.stringify({
         app_id: ONESIGNAL_APP_ID,
         contents: { "en": mensagem, "pt": mensagem },
@@ -143,9 +134,9 @@ async function enviarPushOneSignal(filtroTag, filtroValor, titulo, mensagem) {
         ]
       })
     });
-    console.log("Push enviado em segundo plano via OneSignal!");
+    console.log("Push de segundo plano disparado via OneSignal.");
   } catch (e) {
-    console.error("Erro ao enviar push via OneSignal:", e);
+    console.error("Erro OneSignal Fetch:", e);
   }
 }
 
@@ -256,12 +247,10 @@ function createModelBlock(data = {}, index = 0) {
       </div>
       <button type="button" class="remove-model ${composerBlocks.length === 1 ? "hidden" : ""}">Remover</button>
     </div>
-
     <div class="field">
       <label>Como vai ser o pedido neste modelo</label>
       <textarea class="model-notes" placeholder="Ex: 50 P preto / 100 M azul">${fmt(data.descricao || "")}</textarea>
     </div>
-
     <div class="model-footer">
       ${index === composerBlocks.length - 1 ? '<button type="button" class="btn btn-ghost add-model-btn">+ Adicionar outro modelo</button>' : ""}
     </div>
@@ -291,7 +280,6 @@ function renderPedidoComposer() {
   container.querySelectorAll(".model-select").forEach(sel => {
     sel.addEventListener("change", syncComposerFromDOM);
   });
-
   container.querySelectorAll(".model-notes").forEach(txt => {
     txt.addEventListener("input", syncComposerFromDOM);
   });
@@ -344,7 +332,6 @@ function legacyToItems(pedidoTexto) {
       });
     }
   }
-
   return items.length ? items : [{ modeloCodigo: "001", modeloNome: modelLabelByValue("001"), descricao: raw }];
 }
 function getPedidoItemsFromOrder(p) {
@@ -401,7 +388,6 @@ function renderPedidosDono() {
             <span class="chip ${chipClass(p.status)}">${fmt(statusLabel(p.status))}</span>
           </div>
         </div>
-
         <div class="pedido-body open">
           <div class="pedido-body-inner">
             <div class="pedido-grid">
@@ -424,20 +410,15 @@ function renderPedidosDono() {
                   <div class="small-label">Modelos</div>
                   <div class="model-summary">${fmt(formatItemsText(items)).replace(/\n/g, "<br>")}</div>
                 </div>
-
                 ${p.obsPedido ? `<div class="obsBox"><strong>Observação do pedido</strong>${fmt(p.obsPedido).replace(/\n/g, "<br>")}</div>` : ""}
                 ${p.expObs ? `<div class="obsBox"><strong>Observação da expedição</strong>${fmt(p.expObs).replace(/\n/g, "<br>")}</div>` : ""}
                 ${p.editedBy ? `<div class="obsBox"><strong>Última edição</strong>${fmt(p.editedBy)}<br>${fmt(p.editedDate)} às ${fmt(p.editedTime)}</div>` : ""}
-
                 <div class="status-actions">
                   <button class="btn btn-ghost" onclick="window.editarPedido('${p.id}')">Editar pedido</button>
                   <button class="btn btn-danger" onclick="window.excluirPedido('${p.id}', 'dono')">Excluir pedido</button>
                 </div>
-
                 <div class="inline-note">
-                  ${p.status === "separado"
-                    ? "<strong>Pedido finalizado.</strong>"
-                    : "<strong>Pedido pendente.</strong> Ainda pode receber ajuste da expedição."}
+                  ${p.status === "separado" ? "<strong>Pedido finalizado.</strong>" : "<strong>Pedido pendente.</strong> Ainda pode receber ajuste da expedição."}
                 </div>
               </div>
             </div>
@@ -493,7 +474,6 @@ function renderPedidosExp() {
             <span class="badge">${open ? "Ocultar" : "Abrir"}</span>
           </div>
         </button>
-
         <div class="pedido-body ${open ? "open" : ""}" id="body-${p.id}">
           <div class="pedido-body-inner">
             <div class="pedido-grid">
@@ -507,15 +487,12 @@ function renderPedidosExp() {
                   <div class="big-value">${fmt(p.estado || "-")} / ${fmt(p.cidade || "-")}</div>
                 </div>
               </div>
-
               <div class="muted-card">
                 <div class="small-label">Modelos do pedido</div>
                 ${htmlItemsText(items)}
               </div>
-
               ${p.obsPedido ? `<div class="obsBox"><strong>Observação do pedido</strong>${fmt(p.obsPedido).replace(/\n/g, "<br>")}</div>` : ""}
               ${p.editedBy ? `<div class="obsBox"><strong>Última edição</strong>${fmt(p.editedBy)}<br>${fmt(p.editedDate)} às ${fmt(p.editedTime)}</div>` : ""}
-
               <div class="detail-box">
                 <div class="field">
                   <label><strong>Status do pedido</strong></label>
@@ -527,25 +504,16 @@ function renderPedidosExp() {
                     <option value="separado" ${st==="separado" ? "selected" : ""}>Separado</option>
                   </select>
                 </div>
-
                 <div id="obsWrap-${p.id}" style="margin-top:12px; ${st==="separado" ? "display:none;" : ""}">
                   <div class="field">
                     <label><strong>Observações da expedição</strong></label>
                     <textarea id="obs-${p.id}" placeholder="Escreva o recado para o dono.">${fmt(p.expObs || "")}</textarea>
                   </div>
-                  <div class="tiny">O campo aparece quando o status é diferente de “Separado”.</div>
                 </div>
-
                 <div class="status-actions">
                   <button class="btn btn-primary" onclick="window.atualizarPedido('${p.id}')">Confirmar seleção</button>
                   ${st === "separado" ? `<button class="btn btn-danger" onclick="window.excluirPedido('${p.id}', 'expedicao')">Excluir separado</button>` : ""}
                 </div>
-              </div>
-
-              <div class="inline-note">
-                ${st === "separado"
-                  ? "<strong>Pedido finalizado.</strong> Continua aparecendo no histórico até ser excluído."
-                  : "<strong>Pedido pendente.</strong> Só será finalizado quando a expedição marcar como separado."}
               </div>
             </div>
           </div>
@@ -573,21 +541,16 @@ window.atualizarPedido = async function(id) {
       alert("Você precisa estar logado como Expedição.");
       return;
     }
-
     const p = pedidos.find(x => x.id === id);
-    if (!p) {
-      alert("Pedido não encontrado.");
-      return;
-    }
+    if (!p) return;
 
     const st = document.getElementById(`status-${id}`)?.value || p.status || "nao-visualizado";
     const obs = (document.getElementById(`obs-${id}`)?.value || "").trim();
 
     if (st === "falta-peca" && !obs) {
-      alert("Preencha a observação para informar o que está faltando.");
+      alert("Preencha a observação informando o que falta.");
       return;
     }
-
     const now = nowParts();
 
     await updateDoc(doc(db, "pedidos", id), {
@@ -599,26 +562,18 @@ window.atualizarPedido = async function(id) {
       updatedTime: now.time
     });
 
-    // ACORDA O CELULAR DO VENDEDOR (Mesmo bloqueado via OneSignal)
+    // ALERTA O CELULAR DO VENDEDOR VIA ONESIGNAL
     const msgPush = `Seu pedido para ${p.cliente} mudou para: ${statusLabel(st)}.`;
     await enviarPushOneSignal("usuario_nome", p.dono, "🔔 Status Atualizado!", msgPush);
 
   } catch (e) {
     console.error(e);
-    alert("Não foi possível atualizar o pedido.");
   }
 };
 
 window.editarPedido = function(id) {
   const p = pedidos.find(x => x.id === id);
-  if (!session || session.perfil !== "dono") {
-    alert("Você precisa estar logado como Vendas.");
-    return;
-  }
-  if (!p || p.dono !== session.nome) {
-    alert("Você só pode editar os seus próprios pedidos.");
-    return;
-  }
+  if (!p || p.dono !== session.nome) return;
 
   editandoId = id;
   $("cliente").value = p.cliente || "";
@@ -628,73 +583,30 @@ window.editarPedido = function(id) {
   composerBlocks = getModelBlocksFromOrder(p);
   renderPedidoComposer();
   renderEditBox();
-  $("cliente").focus();
 };
+
 function getModelBlocksFromOrder(p) {
   if (Array.isArray(p.itensPedido) && p.itensPedido.length) {
-    return p.itensPedido.map(item => ({
-      modeloCodigo: item.modeloCodigo || "001",
-      descricao: item.descricao || ""
-    }));
+    return p.itensPedido.map(item => ({ modeloCodigo: item.modeloCodigo || "001", descricao: item.descricao || "" }));
   }
   return legacyToItems(p.pedidoTexto || "");
 }
+
 window.excluirPedido = async function(id, origem) {
-  try {
-    const p = pedidos.find(x => x.id === id);
-    if (!p) {
-      alert("Pedido não encontrado.");
-      return;
-    }
-
-    if (origem === "dono") {
-      if (!session || session.perfil !== "dono") {
-        alert("Você precisa estar logado como Vendas.");
-        return;
-      }
-      if (p.dono !== session.nome) {
-        alert("Você só pode excluir os seus próprios pedidos.");
-        return;
-      }
-    }
-
-    if (origem === "expedicao") {
-      if (!session || session.perfil !== "expedicao") {
-        alert("Você precisa estar logado como Expedição.");
-        return;
-      }
-      if ((p.status || "") !== "separado") {
-        alert("A expedição só pode excluir pedidos que já foram separados.");
-        return;
-      }
-    }
-
-    if (!confirm("Tem certeza que deseja excluir este pedido?")) return;
-    await deleteDoc(doc(db, "pedidos", id));
-
-    if (editandoId === id) {
-      clearEditMode();
-      $("cliente").value = "";
-      $("estado").value = "";
-      $("cidade").value = "";
-      $("obsPedido").value = "";
-      composerBlocks = [{ modeloCodigo: "001", descricao: "" }];
-      renderPedidoComposer();
-    }
-  } catch (e) {
-    console.error(e);
-    alert("Não foi possível excluir o pedido.");
-  }
+  const p = pedidos.find(x => x.id === id);
+  if (!p || !confirm("Deseja excluir este pedido?")) return;
+  await deleteDoc(doc(db, "pedidos", id));
+  if (editandoId === id) clearEditMode();
 };
 
 function ativarNotificacoes() {
   if (typeof OneSignal !== "undefined") {
     OneSignal.Deferred.push(function() {
       OneSignal.User.PushSubscription.optIn();
-      alert("Configuração de notificações iniciada!");
+      alert("Permissão solicitada. Verifique as caixas de diálogo do navegador!");
     });
   } else {
-    alert("O sistema de notificações ainda está carregando. Tente novamente em instantes.");
+    alert("O OneSignal está carregando. Aguarde 3 segundos e tente de novo.");
   }
 }
 
@@ -703,211 +615,71 @@ function setupEvents() {
 
   $("btnEntrar").addEventListener("click", async () => {
     session = $("perfilLogin").value === "dono"
-    ? { perfil: "dono", nome: $("nomeDono").value }
-    : { perfil: "expedicao", nome: "Expedição" };
+      ? { perfil: "dono", nome: $("nomeDono").value }
+      : { perfil: "expedicao", nome: "Expedição" };
 
     saveSession();
     renderAll();
     ativarNotificacoes();
   });
 
-  $("btnSairDono").addEventListener("click", () => {
-    session = null;
-    saveSession();
-    renderAll();
-  });
+  $("btnSairDono").addEventListener("click", () => { session = null; saveSession(); renderAll(); });
+  $("btnSairExp").addEventListener("click", () => { session = null; saveSession(); renderAll(); });
 
-  $("btnSairExp").addEventListener("click", () => {
-    session = null;
-    saveSession();
-    renderAll();
-  });
-
-  $("pedidoBlocos").addEventListener("click", (event) => {
-    const target = event.target instanceof HTMLElement ? event.target : null;
+  $("pedidoBlocos").addEventListener("click", (e) => {
+    const target = e.target;
     if (!target) return;
-
-    const add = target.closest(".add-model-btn");
-    const remove = target.closest(".remove-model");
-
-    if (add) {
+    if (target.closest(".add-model-btn")) {
       syncComposerFromDOM();
-      composerBlocks.push({
-        modeloCodigo: "001",
-        descricao: ""
-      });
+      composerBlocks.push({ modeloCodigo: "001", descricao: "" });
       renderPedidoComposer();
-      requestAnimationFrame(() => {
-        const last = $("pedidoBlocos").querySelector(".model-block:last-child .model-notes");
-        if (last) last.focus();
-      });
-      return;
     }
-
-    if (remove) {
+    if (target.closest(".remove-model")) {
       syncComposerFromDOM();
-
-      const bloco = remove.closest(".model-block");
-      const todos = [...document.querySelectorAll("#pedidoBlocos .model-block")];
-      const index = todos.indexOf(bloco);
-
-      if (index > -1) {
-        composerBlocks.splice(index, 1);
-      }
-
-      if (!composerBlocks.length) {
-        composerBlocks = [{
-          modeloCodigo: "001",
-          descricao: ""
-        }];
-      }
-
+      const index = [...document.querySelectorAll("#pedidoBlocos .model-block")].indexOf(target.closest(".model-block"));
+      if (index > -1) composerBlocks.splice(index, 1);
       renderPedidoComposer();
     }
   });
-
-  $("pedidoBlocos").addEventListener("input", syncComposerFromDOM);
-  $("pedidoBlocos").addEventListener("change", syncComposerFromDOM);
 
   $("btnEnviarPedido").addEventListener("click", async () => {
     try {
-      if (!session || session.perfil !== "dono") {
-        alert("Você precisa estar logado como Vendas.");
-        return;
-      }
-
       const cliente = $("cliente").value.trim();
       const estado = $("estado").value.trim();
       const cidade = $("cidade").value.trim();
       const obsPedido = $("obsPedido").value.trim();
       syncComposerFromDOM();
 
-      const items = composerBlocks
-        .filter(item => item.modeloCodigo)
-        .map(item => ({
-          modeloCodigo: item.modeloCodigo,
-          modeloNome: modelLabelByValue(item.modeloCodigo),
-          descricao: (item.descricao || "").trim()
-        }));
-
-      if (!cliente || !estado || !cidade) {
-        alert("Preencha o cliente, o estado e a cidade.");
-        return;
-      }
-
-      const validItems = items.filter(item => item.modeloCodigo || item.descricao);
-      if (!validItems.length) {
-        alert("Adicione ao menos um modelo ao pedido.");
-        return;
-      }
+      if (!cliente || !estado || !cidade) return alert("Preencha todos os campos.");
 
       const now = nowParts();
-      const pedidoTexto = formatItemsText(validItems);
-
       if (editandoId) {
-        const p = pedidos.find(x => x.id === editandoId);
-        if (!p) {
-          alert("Pedido não encontrado.");
-          clearEditMode();
-          return;
-        }
-        if (p.dono !== session.nome) {
-          alert("Você só pode editar os seus próprios pedidos.");
-          clearEditMode();
-          return;
-        }
-
         await updateDoc(doc(db, "pedidos", editandoId), {
-          cliente,
-          estado,
-          cidade,
-          itensPedido: validItems,
-          pedidoTexto,
-          obsPedido,
-          status: "nao-visualizado",
-          expObs: "",
-          editedBy: session.nome,
-          editedDate: now.date,
-          editedTime: now.time,
-          editedAtMs: Date.now(),
-          updatedAt: serverTimestamp(),
-          updatedAtMs: Date.now(),
-          updatedDate: now.date,
-          updatedTime: now.time
+          cliente, estado, cidade, itensPedido: composerBlocks, pedidoTexto: formatItemsText(composerBlocks), obsPedido, status: "nao-visualizado",
+          updatedAt: serverTimestamp(), updatedAtMs: Date.now(), updatedDate: now.date, updatedTime: now.time
         });
-
         clearEditMode();
       } else {
         await addDoc(pedidosRef, {
-          dono: session.nome,
-          cliente,
-          estado,
-          cidade,
-          itensPedido: validItems,
-          pedidoTexto,
-          obsPedido,
-          status: "nao-visualizado",
-          expObs: "",
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          createdAtMs: Date.now(),
-          updatedAtMs: Date.now(),
-          createdDate: now.date,
-          createdTime: now.time,
-          updatedDate: now.date,
-          updatedTime: now.time,
-          editedBy: "",
-          editedDate: "",
-          editedTime: "",
-          editedAtMs: 0
+          dono: session.nome, cliente, estado, cidade, itensPedido: composerBlocks, pedidoTexto: formatItemsText(composerBlocks), obsPedido, status: "nao-visualizado", expObs: "",
+          createdAt: serverTimestamp(), updatedAt: serverTimestamp(), createdAtMs: Date.now(), updatedAtMs: Date.now(), createdDate: now.date, createdTime: now.time, updatedDate: now.date, updatedTime: now.time
         });
 
-        // ACORDA O CELULAR DA EXPEDIÇÃO (Mesmo bloqueado via OneSignal)
-        await enviarPushOneSignal(
-          "usuario_perfil", 
-          "expedicao", 
-          "📦 Novo pedido recebido!", 
-          `Enviado por ${session.nome} para o cliente ${cliente}.`
-        );
+        // ALERTA A EXPEDIÇÃO EM SEGUNDO PLANO
+        await enviarPushOneSignal("usuario_perfil", "expedicao", "📦 Novo pedido recebido!", `De ${session.nome} para o cliente ${cliente}.`);
       }
-
-      $("cliente").value = "";
-      $("estado").value = "";
-      $("cidade").value = "";
-      $("obsPedido").value = "";
-      composerBlocks = [{ modeloCodigo: "001", descricao: "" }];
-      renderPedidoComposer();
-    } catch (e) {
-      console.error(e);
-      alert(editandoId ? "Não foi possível salvar as alterações." : "Não foi possível enviar o pedido.");
-    }
-  });
-
-  $("btnCancelarEdicao").addEventListener("click", () => {
-    clearEditMode();
-    $("cliente").value = "";
-    $("estado").value = "";
-    $("cidade").value = "";
-    $("obsPedido").value = "";
-    composerBlocks = [{ modeloCodigo: "001", descricao: "" }];
-    renderPedidoComposer();
+      $("cliente").value = ""; $("estado").value = ""; $("cidade").value = ""; $("obsPedido").value = "";
+      composerBlocks = [{ modeloCodigo: "001", descricao: "" }]; renderPedidoComposer();
+    } catch (e) { console.error(e); }
   });
 
   $("btnExemplo").addEventListener("click", () => {
-    $("cliente").value = "Loja Exemplo";
-    $("estado").value = "Ceará";
-    $("cidade").value = "Juazeiro do Norte";
-    $("obsPedido").value = "Separar com prioridade.";
-    composerBlocks = [
-      { modeloCodigo: "001", descricao: "50 P preto\n100 M azul" },
-      { modeloCodigo: "002", descricao: "20 G branco" }
-    ];
-    renderPedidoComposer();
+    $("cliente").value = "Loja Exemplo"; $("estado").value = "CE"; $("cidade").value = "Fortaleza";
+    composerBlocks = [{ modeloCodigo: "001", descricao: "10 P preto" }]; renderPedidoComposer();
   });
 
   $("searchExp").addEventListener("input", renderPedidosExp);
   $("filterStatus").addEventListener("change", renderPedidosExp);
-
   $("btnAtivarNotificacoesLogin").addEventListener("click", ativarNotificacoes);
   $("btnAtivarNotificacoesDono").addEventListener("click", ativarNotificacoes);
   $("btnAtivarNotificacoesExp").addEventListener("click", ativarNotificacoes);
