@@ -49,14 +49,13 @@ function salvarSessao(perfil, nome) {
 }
 
 // ==========================================
-// INTEGRAÇÃO DO ONESIGNAL CORRIGIDA (SEM CORS)
+// INTEGRAÇÃO DO ONESIGNAL CORRIGIDA
 // ==========================================
 async function vincularUsuarioOneSignal() {
   if (!session) return;
   try {
     window.OneSignal = window.OneSignal || [];
     window.OneSignal.push(async function() {
-      // Vincula o perfil e nome do usuário logado no OneSignal de forma nativa e segura
       await window.OneSignal.User.addTag("usuario_perfil", session.perfil);
       if (session.perfil === "dono") {
         await window.OneSignal.User.addTag("usuario_nome", session.nome);
@@ -80,15 +79,12 @@ async function ativarNotificacoes() {
   }
 }
 
-// Função segura de push sem violar políticas de CORS do OneSignal
 async function enviarPushOneSignal(tagKey, tagValue, titulo, mensagem) {
   console.log(`[Push Simulador] Disparando push para ${tagKey}=${tagValue}. Título: ${titulo}`);
-  // Nota: O envio em massa ou direcionado direto do front via API crua é bloqueado por CORS pelo OneSignal por segurança.
-  // O SDK da v16 gerencia notificações locais e atualizações de canais automaticamente em segundo plano.
 }
 
 // ==========================================
-// RENDERIZAÇÃO E CORREÇÃO DE IDS DOS COMPONENTES
+// RENDERIZAÇÃO E COMPONENTES
 // ==========================================
 function renderAll() {
   if (!session) {
@@ -124,7 +120,6 @@ function renderPedidosDono() {
 
   if (meusPedidos.length === 0) {
     lista.innerHTML = `<div class="empty">Nenhum pedido enviado por você ainda.</div>`;
-    // Correção dos seletores de estatísticas para os IDs corretos do seu HTML
     if ($("statTotalDono")) $("statTotalDono").textContent = "0";
     if ($("statPendentesDono")) $("statPendentesDono").textContent = "0";
     if ($("statSeparadosDono")) $("statSeparadosDono").textContent = "0";
@@ -177,7 +172,6 @@ function renderPedidosDono() {
     `;
   }).join("");
 
-  // Atualização segura dos elementos de estatísticas do Painel de Vendas
   if ($("statTotalDono")) $("statTotalDono").textContent = meusPedidos.length;
   if ($("statPendentesDono")) $("statPendentesDono").textContent = pendentes;
   if ($("statSeparadosDono")) $("statSeparadosDono").textContent = separados;
@@ -293,7 +287,7 @@ function renderPedidosExp() {
 }
 
 // ==========================================
-// AÇÕES DO SISTEMA (ADICIONAR/ATUALIZAR)
+// AÇÕES DO SISTEMA
 // ==========================================
 async function atualizarStatusPedido(id, novoStatus) {
   try {
@@ -308,7 +302,6 @@ async function atualizarStatusPedido(id, novoStatus) {
     });
     
     if (pedidoAntigo && pedidoAntigo.status !== novoStatus) {
-      // Dispara o alerta simulado
       await enviarPushOneSignal("usuario_nome", pedidoAntigo.vendedor, "🔄 Status Atualizado!", `O pedido de ${pedidoAntigo.cliente} mudou para: ${novoStatus.replace("-"," ")}`);
     }
   } catch (e) { console.error("Erro ao atualizar status:", e); }
@@ -334,7 +327,6 @@ function renderPedidoComposer() {
     </div>
   `).join("");
 
-  // Adiciona botão dinâmico para incluir mais modelos no formulário
   const btnAdd = document.createElement("button");
   btnAdd.type = "button";
   btnAdd.className = "btn btn-ghost";
@@ -404,7 +396,7 @@ function obterDataHoraLocal() {
 }
 
 // ==========================================
-// INICIALIZAÇÃO DE ESCUTADORES DE EVENTOS
+// INICIALIZAÇÃO DE EVENTOS
 // ==========================================
 if (typeof window !== "undefined") {
   window.addEventListener("DOMContentLoaded", () => {
@@ -442,7 +434,7 @@ if (typeof window !== "undefined") {
       const obs = $("obsPedido").value.trim();
 
       if (!cliente || !estado || !city) {
-        alert("Preencha Cliente, Estado e Cidade obrigatóriamente!");
+        alert("Preencha Cliente, Estado e Cidade obrigatoriamente!");
         return;
       }
 
@@ -477,7 +469,6 @@ if (typeof window !== "undefined") {
             updatedTime: localDateTime.time
           });
 
-          // Alerta seguro simulado para a expedição
           await enviarPushOneSignal("usuario_perfil", "expedicao", "📦 Novo pedido recebido!", `De ${session.nome} para o cliente ${cliente}.`);
         }
         
@@ -486,7 +477,7 @@ if (typeof window !== "undefined") {
         renderPedidoComposer();
       } catch (e) { 
         console.error(e); 
-        alert("Não foi possível processar o pedido no banco.");
+        alert("Não foi possível processar o pedido.");
       }
     });
 
@@ -498,13 +489,14 @@ if (typeof window !== "undefined") {
 
     $("searchExp").addEventListener("input", renderPedidosExp);
     $("filterStatus").addEventListener("change", renderPedidosExp);
-    $("btnAtivarNotificacoesLogin").addEventListener("click", AtivarNotificacoes);
-    $("btnAtivarNotificacoesDono").addEventListener("click", AtivarNotificacoes);
-    $("btnAtivarNotificacoesExp").addEventListener("click", AtivarNotificacoes);
+    
+    // 💡 AQUI ESTAVA O SEU ERRO (Trocado de AtivarNotificacoes para ativarNotificacoes)
+    $("btnAtivarNotificacoesLogin").addEventListener("click", ativarNotificacoes);
+    $("btnAtivarNotificacoesDono").addEventListener("click", ativarNotificacoes);
+    $("btnAtivarNotificacoesExp").addEventListener("click", ativarNotificacoes);
   });
 }
 
-// Escuta em tempo real do banco de dados (Firebase)
 onSnapshot(pedidosRef, (snapshot) => {
   const next = new Map();
   snapshot.forEach(d => next.set(d.id, { id: d.id, ...d.data() }));
