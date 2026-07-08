@@ -175,7 +175,6 @@ function renderPedidosDono() {
   if ($("statPendentesDono")) $("statPendentesDono").textContent = pendentes;
   if ($("statSeparadosDono")) $("statSeparadosDono").textContent = separados;
 
-  // 💡 CORREÇÃO AQUI: Garante o clique correto mesmo em cima do emoji
   document.querySelectorAll(".btn-editar").forEach(btn => {
     btn.addEventListener("click", (e) => {
       const targetBtn = e.target.closest(".btn-editar");
@@ -379,16 +378,6 @@ function renderPedidoComposer() {
   });
 }
 
-function activarModoEdicao(id) {
-  // Troca para minúscula na declaração interna por segurança global
-  ativarModoEdicao(id);
-}
-
-function activarModoEdicao(id) {
-  // Alias compatível
-  ativarModoEdicao(id);
-}
-
 function ativarModoEdicao(id) {
   const p = databasePedidos.get(id);
   if (!p) return;
@@ -418,7 +407,7 @@ function obterDataHoraLocal() {
   const agora = new Date();
   const d = String(agora.getDate()).padStart(2, '0');
   const m = String(agora.getMonth() + 1).padStart(2, '0');
-  const y = agora.getFullYear();
+  const y = ago.getFullYear();
   const brTime = agora.toLocaleTimeString("pt-BR", { hour12: false, hour: '2-digit', minute: '2-digit' });
   return { date: `${d}/${m}/${y}`, time: brTime };
 }
