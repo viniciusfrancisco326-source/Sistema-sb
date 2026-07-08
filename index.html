@@ -7,151 +7,120 @@
   <link rel="stylesheet" href="style.css?v=3.0">
   <link rel="icon" type="image/png" href="Sou Bela -logo (3).png?v=1.0">
   
-<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-<script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      // 💡 Cole o ID que você copiou do painel entre as aspas abaixo:
-      appId: "000b8540-c342-4950-8ab0-797bbc3e7313",
-      allowLocalhostAsSecure: true,
-      serviceWorkerPath: "OneSignalSDKWorker.js",
-      serviceWorkerParam: { scope: "/Sistema-sb/" },
-      notifyButton: {
-        enable: false
-      }
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({
+        appId: "000b8540-c342-4450-8ab0-797bbc3e7313",
+        allowLocalhostAsSecure: true,
+        serviceWorkerPath: "OneSignalSDKWorker.js",
+        serviceWorkerParam: { scope: "/Sistema-sb/" },
+      });
     });
-  });
-</script>
+  </script>
 </head>
 <body>
 
   <div id="loginScreen" class="login-container">
     <div class="login-card">
-      <img src="Sou bela -logo.png" alt="Logo Sou Bela" class="login-logo">
+      <img src="Sou bela -logo.png" alt="Logo Sou Bela" class=\"login-logo\">
       <h2>Acesso ao Sistema</h2>
       
       <div class="field">
         <label for="perfilLogin">Quem está acessando?</label>
         <select id="perfilLogin">
-          <option value="dono">Vendas (Donos)</option>
-          <option value="expedicao">Expedição</option>
+          <option value="dono">Dono / Vendedor</option>
+          <option value="expedicao">Expedicação</option>
         </select>
       </div>
 
-      <div class="field" id="campoDono">
-        <label for="nomeDono">Seu Nome</label>
-        <select id="nomeDono">
-          <option value="Fabio">Fabio</option>
-          <option value="Dona Lene">Dona Lene</option>
-        </select>
+      <div class="field">
+        <label for="nomeVendedor">Seu Nome</label>
+        <input type="text" id="nomeVendedor" placeholder="Digite seu nome...">
       </div>
 
-      <button id="btnEntrar" class="btn btn-primary btn-block">Entrar no Sistema</button>
-      <button id="btnAtivarNotificacoesLogin" class="btn btn-ghost btn-block" style="margin-top:10px;">🔔 Ativar Notificações neste Aparelho</button>
+      <button id="btnEntrar" class="btn-primary">Entrar no Sistema</button>
+      
+      <button id="btnAtivarNotificacoesLogin">🔔 Ativar Notificações Push</button>
     </div>
   </div>
 
-  <div id="appDono" class="hidden">
-    <header class="app-header">
-      <div class="header-info">
-        <img src="Sou bela -logo.png" alt="Logo" class="nav-logo">
+  <div id="dashboardDono" class="shell" style="display: none;">
+    <div class="page">
+      <div class="hero">
         <div>
-          <h1 id="nomeSessaoDono">Logado como: -</h1>
-          <p>Painel de Controle de Pedidos</p>
+          <h1>Painel do Vendedor</h1>
+          <p>Olá, <span id="lblDonoNome">...</span>! Cadastre e acompanhe seus pedidos.</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button id="btnAtivarNotificacoesDono" style="background:#2563eb !important;">🔔 Configurar Notificações</button>
+          <button id="btnSairDono" class="btn-danger">Sair</button>
         </div>
       </div>
-      <button id="btnSairDono" class="btn btn-danger">Sair</button>
-    </header>
 
-    <div class="container layout-grid">
-      <aside class="sidebar-form">
+      <div class="layout-grid">
         <div class="card">
-          <div class="card-header">
-            <h2>Enviar Novo Pedido</h2>
-          </div>
-          
-          <div class="field">
-            <label for="cliente">Nome da Loja / Cliente</label>
-            <input type="text" id="cliente" placeholder="Ex: Loja Centro">
-          </div>
-
-          <div class="grid-2">
+          <h3>📦 Enviar Novo Pedido</h3>
+          <form id="formNovoPedido">
             <div class="field">
-              <label for="estado">Estado</label>
-              <input type="text" id="estado" placeholder="Ex: CE">
+              <label>Nome do Cliente</label>
+              <input type="text" id="cliente" placeholder="Ex: Maria José">
             </div>
-            <div class="field">
-              <label for="cidade">Cidade</label>
-              <input type="text" id="cidade" placeholder="Ex: Fortaleza">
+            <div class="grid-2">
+              <div class="field">
+                <label>Estado</label>
+                <select id="estado">
+                  <option value="CE">Ceará (CE)</option>
+                  <option value="MA">Maranhão (MA)</option>
+                  <option value="PI">Piauí (PI)</option>
+                  <option value="RN">Rio Grande do Norte (RN)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Cidade</label>
+                <input type="text" id="cidade" placeholder="Ex: Fortaleza">
+              </div>
             </div>
-          </div>
 
-          <div id="pedidoBlocos"></div>
+            <div class="divider"></div>
+            <h4>Peças do Pedido</h4>
+            <div id="pedidoComposerBlocks"></div>
+            <button type="button" id="btnAddModelRow" class="btn-secondary" style="margin-top:10px;">➕ Adicionar Outro Modelo</button>
 
-          <div class="field" style="margin-top:15px;">
-            <label for="obsPedido">Observações Gerais do Pedido</label>
-            <textarea id="obsPedido" placeholder="Ex: Embalar para presente, urgência na entrega..."></textarea>
-          </div>
+            <div class="field" style="margin-top:15px;">
+              <label>Observações / Detalhes Gerais</label>
+              <textarea id="obsPedido" rows="3" placeholder="Alguma observação extra sobre a entrega..."></textarea>
+            </div>
 
-          <div id="editStatusBox" class="hidden alert alert-warning">
-            <p id="editInfo"></p>
-          </div>
-
-          <div class="form-buttons">
-            <button id="btnEnviarPedido" class="btn btn-primary flex-1">Enviar pedido</button>
-            <button id="btnCancelarEdicao" class="btn btn-ghost" style="display:none;">Cancelar</button>
-          </div>
-          
-          <button id="btnExemplo" class="btn btn-ghost btn-block" style="margin-top:10px;">Preencher Exemplo Rápido</button>
-          <button id="btnAtivarNotificacoesDono" class="btn btn-ghost btn-block" style="margin-top:10px;">🔔 Recalibrar Alertas</button>
-        </div>
-      </aside>
-
-      <main class="main-content">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-num" id="statTotalDono">0</div>
-            <div class="stat-label">Meus Pedidos</div>
-          </div>
-          <div class="stat-card status-pendente">
-            <div class="stat-num" id="statPendentesDono">0</div>
-            <div class="stat-label">Pendentes</div>
-          </div>
-          <div class="stat-card status-separado">
-            <div class="stat-num" id="statSeparadosDono">0</div>
-            <div class="stat-label">Separados</div>
-          </div>
+            <div class="form-buttons">
+              <button type="submit" class="btn-primary flex-1">Enviar para Expedição</button>
+              <button type="button" id="btnExemplo" class="btn-secondary">Preencher Exemplo</button>
+            </div>
+          </form>
         </div>
 
-        <div class="section-title">
-          <h2>Histórico de Pedidos de <span id="nomePedidosDono">-</span></h2>
+        <div class="card">
+          <h3>📋 Meus Pedidos Enviados</h3>
+          <div id="listaPedidosDono" class="pedidos-container"></div>
         </div>
-
-        <div id="listaPedidosDono" class="pedidos-container">
-          <div class="empty">Carregando seus pedidos...</div>
-        </div>
-      </main>
+      </div>
     </div>
   </div>
 
-  <div id="appExpedicao" class="hidden">
-    <header class="app-header header-expedicao">
-      <div class="header-info">
-        <img src="Sou bela -logo.png" alt="Logo" class="nav-logo">
+  <div id="dashboardExpedicao" class="shell" style="display: none;">
+    <div class="page">
+      <div class="hero">
         <div>
-          <h1>Painel da Expedição</h1>
-          <p>Gerenciamento Geral de Demandas</p>
+          <h1>Setor de Expedição 🚚</h1>
+          <p>Gerencie a fila de separação de mercadorias em tempo real.</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button id="btnAtivarNotificacoesExp" style="background:#2563eb !important;">🔔 Configurar Notificações</button>
+          <button id="btnSairExp" class="btn-danger">Sair</button>
         </div>
       </div>
-      <div style="display:flex; gap:10px;">
-        <button id="btnAtivarNotificacoesExp" class="btn btn-ghost" style="color:white; border-color:rgba(255,255,255,0.3)">🔔 Ativar Alertas</button>
-        <button id="btnSairExp" class="btn btn-danger">Sair</button>
-      </div>
-    </header>
 
-    <div class="container main-expedicao">
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-num" id="statTotalExp">0</div>
@@ -169,7 +138,7 @@
 
       <div class="filter-bar">
         <div class="field flex-1">
-          <input type="text" id="searchExp" placeholder="🔎 Buscar por cliente, vendedor, cidade, modelo ou ID...">
+          <input type="text" id="searchExp" placeholder="🔎 Buscar por cliente, vendedor, cidade...">
         </div>
         <div class="field" style="min-width: 200px;">
           <select id="filterStatus">
@@ -184,7 +153,7 @@
       </div>
 
       <div id="listaPedidosExp" class="pedidos-container unified-exp">
-        <div class="empty">Carregando fila de expedição...</div>
+        <div class="empty">Carregando dados...</div>
       </div>
     </div>
   </div>
