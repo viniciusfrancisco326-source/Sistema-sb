@@ -28,33 +28,23 @@ const pedidosRef = collection(db, "pedidos");
 
 const SESSION_KEY = "sistema_sou_bela_sessao_v13";
 const ONESIGNAL_APP_ID = "000b8540-c342-4450-8ab0-797bbc3e7313"; 
+const ONESIGNAL_REST_KEY = "grrf5hsueuanuuuscnyrmaisd"; // Sua chave REST API atualizada
 
 let session = null;
 let databasePedidos = new Map();
 let composerBlocks = [{ modeloCodigo: "001", descricao: "" }];
-let editandoId = null;
 
-const $ = id => document.getElementById(id);
-
-// Carregar sessão existente
-try {
-  const saved = localStorage.getItem(SESSION_KEY);
-  if (saved) session = JSON.parse(saved);
-} catch (e) { console.error(e); }
-
-function salvarSessao(perfil, nome) {
-  session = { perfil, nome };
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  renderAll();
-}
+// Utility helper para ID de elementos HTML
+function $(id) { return document.getElementById(id); }
 
 // ==========================================
-// INTEGRAÇÃO COMPLETA DO ONESIGNAL (CORRIGIDA)
+// FUNÇÕES DE NOTIFICAÇÃO PUSH (ONESIGNAL V16)
 // ==========================================
+
 async function vincularUsuarioOneSignal() {
   if (!session) return;
   try {
-    // Na v16 chamamos a tag diretamente sem o window.OneSignal.push()
+    // Na v16 chamamos as APIs de User diretamente, sem usar o push antigo
     if (session.perfil === "dono") {
       await OneSignal.User.addTag("identificador", `dono_${session.nome}`);
       console.log(`[OneSignal] Tag configurada: identificador = dono_${session.nome}`);
@@ -72,26 +62,26 @@ async function ativarNotificacoes() {
     console.log("[OneSignal] Chamando interface de inscrição...");
     
     // Valida suporte a push no navegador
-    if (!window.OneSignal || !window.OneSignal.Notifications.isPushSupported()) {
+    if (!window.OneSignal || !OneSignal.Notifications.isPushSupported()) {
       alert("Este navegador não possui suporte a Notificações Push.");
       return;
     }
 
     // 1. Verifica se já está permitido
-    if (window.OneSignal.Notifications.permission === "granted") {
-      await vincularUsuarioOneSignal(); // Garante as tags
+    if (OneSignal.Notifications.permission === "granted") {
+      await vincularUsuarioOneSignal();
       alert("✅ Tudo certo! As notificações já estão ativadas para este aparelho.");
       return;
     }
 
     // 2. Verifica se o usuário bloqueou antes
-    if (window.OneSignal.Notifications.permission === "denied") {
-      alert("❌ As notificações estão bloqueadas neste navegador! Clique no ícone de cadeado ao lado do link do site, mude 'Notificações' para 'Permitir' e tente novamente.");
+    if (OneSignal.Notifications.permission === "denied") {
+      alert("❌ As notificações estão bloqueadas! Clique no ícone de cadeado ao lado do link do site, mude 'Notificações' para 'Permitir' e recarregue a página.");
       return;
     }
 
-    // 3. Se for a primeira vez (default), abre a janela do OneSignal
-    await window.OneSignal.Slidedown.promptPush();
+    // 3. Se for a primeira vez, abre a janela de prompt do OneSignal
+    await OneSignal.Slidedown.promptPush();
     await vincularUsuarioOneSignal();
     
   } catch (e) {
@@ -100,464 +90,468 @@ async function ativarNotificacoes() {
   }
 }
 
-// Disparo real usando a API rest pública do OneSignal para web push
-async function enviarPushOneSignal(tagKey, tagValue, titulo, mensagem) {
-  console.log(`[Push] Disparando via API OneSignal para ${tagKey}=${tagValue}`);
+async function enviarPushOneSignal(chaveTag, valorTag, titulo, mensagem) {
   try {
-    await fetch("https://onesignal.com/api/v1/notifications", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json; charset=utf-8"
-      },
-      body: JSON.stringify({
-        app_id: ONESIGNAL_APP_ID,
-        target_channel: "push",
-        filters: [
-          { field: "tag", key: tagKey, relation: "=", value: tagValue }
-        ],
-        contents: { en: mensagem, pt: mensagem },
-        headings: { en: titulo, pt: titulo }
-      })
-    });
-  } catch (e) { console.error("[OneSignal API Error]", e); }
+    console.log(`[Push] Tentando enviar notificação para tag ${chaveTag} = ${valorTag}`);
+
+    const urlProxy = "https://cors-anywhere.herokuapp.com/";
+    const urlOneSignal = "https://onesignal.com/api/v1/notifications";
+
+    const payload = {
+      app_id: ONESIGNAL_APP_ID,
+      headings: { "en": titulo, "pt": titulo },
+      contents: { "en": mensagem, "pt": mensagem },
+      filters: [
+        { "field": "tag", "key": chaveTag, "relation": "=", "value": valorTag }
+      ]
+    };
+
+    let response;
+    try {
+      // Tenta enviar direto
+      response = await fetch(urlOneSignal, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": `Basic ${ONESIGNAL_REST_KEY}`
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch (corsError) {
+      // Se der erro de CORS, usa o Proxy intermediário automaticamente
+      console.warn("[Push] Bloqueio de CORS detectado. Tentando enviar via Proxy...");
+      response = await fetch(urlProxy + urlOneSignal, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": `Basic ${ONESIGNAL_REST_KEY}`,
+          "X-Requested-With": "XMLHttpRequest"
+        },
+        body: JSON.stringify(payload)
+      });
+    }
+
+    const resultado = await response.json();
+    console.log("[OneSignal API Response]", resultado);
+
+    if (resultado.errors) {
+      console.error("[Push Erro do OneSignal]", resultado.errors);
+    } else {
+      console.log("✅ Notificação enviada de ponta a ponta!");
+    }
+
+  } catch (error) {
+    console.error("[Push Exception]", error);
+  }
 }
 
 // ==========================================
-// RENDERIZAÇÃO: PAINEL DE VENDAS (DONOS)
+// FUNÇÕES DO CORE DO SISTEMA (LOGIN, DOM, DATA)
 // ==========================================
-function renderAll() {
-  if (!session) {
-    $("loginScreen").classList.remove("hidden");
-    $("appDono").classList.add("hidden");
-    $("appExpedicao").classList.add("hidden");
-    return;
+
+function getLocalDateTime() {
+  const now = new Date();
+  const offset = -3; // UTC-3 (Horário de Brasília)
+  const localTime = new Date(now.getTime() + offset * 60 * 60 * 1000);
+  
+  const dateStr = localTime.toISOString().split('T')[0].split('-').reverse().join('/');
+  const timeStr = localTime.toISOString().split('T')[1].substring(0, 5);
+  
+  return { date: dateStr, time: timeStr };
+}
+
+function checkSession() {
+  const cached = localStorage.getItem(SESSION_KEY);
+  if (cached) {
+    session = JSON.parse(cached);
+    showDashboard();
+  } else {
+    showLogin();
   }
+}
 
-  $("loginScreen").classList.add("hidden");
-  vincularUsuarioOneSignal();
+function showLogin() {
+  $("loginScreen").style.display = "flex";
+  $("dashboardDono").style.display = "none";
+  $("dashboardExpedicao").style.display = "none";
+}
 
+function showDashboard() {
+  $("loginScreen").style.display = "none";
   if (session.perfil === "dono") {
-    $("appDono").classList.remove("hidden");
-    $("appExpedicao").classList.add("hidden");
-    $("nomeSessaoDono").textContent = `Logado como: ${session.nome}`;
-    $("nomePedidosDono").textContent = session.nome;
+    $("dashboardDono").style.display = "block";
+    $("dashboardExpedicao").style.display = "none";
+    $("lblDonoNome").innerText = session.nome;
     renderPedidosDono();
   } else {
-    $("appDono").classList.add("hidden");
-    $("appExpedicao").classList.remove("hidden");
+    $("dashboardDono").style.display = "none";
+    $("dashboardExpedicao").style.display = "block";
     renderPedidosExp();
   }
-}
-
-function renderPedidosDono() {
-  const lista = $("listaPedidosDono");
-  if (!lista) return;
-
-  const meusPedidos = Array.from(databasePedidos.values())
-    .filter(p => p.vendedor === session.nome)
-    .sort((a, b) => (b.updatedAtMs || 0) - (a.updatedAtMs || 0));
-
-  if (meusPedidos.length === 0) {
-    lista.innerHTML = `<div class="empty">Nenhum pedido enviado por você ainda.</div>`;
-    if ($("statTotalDono")) $("statTotalDono").textContent = "0";
-    if ($("statPendentesDono")) $("statPendentesDono").textContent = "0";
-    if ($("statSeparadosDono")) $("statSeparadosDono").textContent = "0";
-    return;
+  
+  // Sincroniza a tag do OneSignal em background caso já tenha dado permissão
+  if (window.OneSignal && OneSignal.Notifications.permission === "granted") {
+    vincularUsuarioOneSignal();
   }
-
-  let pendentes = 0;
-  let separados = 0;
-
-  lista.innerHTML = meusPedidos.map(p => {
-    const isConcluido = p.status === "separado";
-    if (isConcluido) separados++; else pendentes++;
-
-    let statusLabel = p.status.replace("-", " ");
-    let chipClass = "gray";
-    if (p.status === "nao-visualizado") chipClass = "red";
-    if (p.status === "visualizado") chipClass = "yellow";
-    if (p.status === "em-separacao") chipClass = "blue";
-    if (p.status === "falta-peca") chipClass = "red";
-    if (p.status === "separado") chipClass = "green";
-
-    const modelosHtml = (p.modelos || []).map(m => `
-      <div class="muted-card" style="margin-bottom:6px;">
-        <span class="small-label">Modelo: ${m.modeloCodigo}</span>
-        <div class="big-value" style="white-space: pre-line; font-size:14px; margin-top:4px;">${m.descricao}</div>
-      </div>
-    `).join("");
-
-    return `
-      <div class="pedido ${p.status}">
-        <div class="pedido-body-inner">
-          <div class="pedido-head">
-            <div>
-              <span class="chip ${chipClass}">${statusLabel.toUpperCase()}</span>
-              <div class="pedido-meta" style="margin-top:6px;">
-                <strong>Cliente:</strong> ${p.cliente} | <strong>Destino:</strong> ${p.cidade}-${p.estado}
-              </div>
-              <div class="pedido-meta" style="font-size:11px; margin-top:2px;">
-                Enviado em: ${p.createdDate || ""} às ${p.createdTime || ""}
-              </div>
-              ${p.historicoAlteracao ? `<div class="alteracao-aviso-tag">✏️ ${p.historicoAlteracao}</div>` : ""}
-            </div>
-            <div class="actions" style="margin:0; display: flex; gap: 8px;">
-              <button class="btn btn-ghost btn-editar" data-id="${p.id}">✏️ Editar</button>
-              <button class="btn btn-danger btn-excluir-pedido" data-id="${p.id}" style="padding: 8px 12px; font-size: 13px;">🗑️ Excluir</button>
-            </div>
-          </div>
-          <div class="pedido-grid">
-            <div>${modelosHtml}</div>
-            ${p.obs ? `<div class="obsBox"><strong>Observações:</strong>${p.obs}</div>` : ""}
-          </div>
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  if ($("statTotalDono")) $("statTotalDono").textContent = meusPedidos.length;
-  if ($("statPendentesDono")) $("statPendentesDono").textContent = pendentes;
-  if ($("statSeparadosDono")) $("statSeparadosDono").textContent = separados;
-
-  document.querySelectorAll(".btn-editar").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      const targetBtn = e.target.closest(".btn-editar");
-      if (targetBtn) {
-        ativarModoEdicao(targetBtn.getAttribute("data-id"));
-      }
-    });
-  });
-
-  document.querySelectorAll(".btn-excluir-pedido").forEach(btn => {
-    btn.addEventListener("click", async (e) => {
-      const targetBtn = e.target.closest(".btn-excluir-pedido");
-      if (targetBtn && confirm("Deseja mesmo excluir definitivamente este pedido?")) {
-        await deleteDoc(doc(db, "pedidos", targetBtn.getAttribute("data-id")));
-      }
-    });
-  });
 }
 
 // ==========================================
-// RENDERIZAÇÃO: PAINEL DA EXPEDIÇÃO
+// COMPOSER DE PEDIDOS (MÚLTIPLOS MODELOS)
 // ==========================================
-function renderPedidosExp() {
-  const lista = $("listaPedidosExp");
-  if (!lista) return;
-
-  const busca = ($("searchExp")?.value || "").toLowerCase().trim();
-  const filtroStatus = $("filterStatus")?.value || "all";
-
-  let listagem = Array.from(databasePedidos.values())
-    .sort((a, b) => {
-      if (a.status === "nao-visualizado" && b.status !== "nao-visualizado") return -1;
-      if (a.status !== "nao-visualizado" && b.status === "nao-visualizado") return 1;
-      return (b.updatedAtMs || 0) - (a.updatedAtMs || 0);
-    });
-
-  let totalGeral = listagem.length;
-  let filaEspera = listagem.filter(p => p.status !== "separado").length;
-  let concluidos = listagem.filter(p => p.status === "separado").length;
-
-  if ($("statTotalExp")) $("statTotalExp").textContent = totalGeral;
-  if ($("statPendExp")) $("statPendExp").textContent = filaEspera;
-  if ($("statSepExp")) $("statSepExp").textContent = concluidos;
-
-  if (filtroStatus !== "all") {
-    listagem = listagem.filter(p => p.status === filtroStatus);
-  }
-
-  if (busca) {
-    listagem = listagem.filter(p => {
-      return (p.cliente || "").toLowerCase().includes(busca) ||
-             (p.vendedor || "").toLowerCase().includes(busca) ||
-             (p.cidade || "").toLowerCase().includes(busca) ||
-             (p.modelos || []).some(m => (m.modeloCodigo || "").toLowerCase().includes(busca) || (m.descricao || "").toLowerCase().includes(busca));
-    });
-  }
-
-  if (listagem.length === 0) {
-    lista.innerHTML = `<div class="empty">Nenhum pedido encontrado.</div>`;
-    return;
-  }
-
-  lista.innerHTML = listagem.map(p => {
-    let chipClass = "gray";
-    if (p.status === "nao-visualizado") chipClass = "red";
-    if (p.status === "visualizado") chipClass = "yellow";
-    if (p.status === "em-separacao") chipClass = "blue";
-    if (p.status === "falta-peca") chipClass = "red";
-    if (p.status === "separado") chipClass = "green";
-
-    const modelosHtml = (p.modelos || []).map(m => `
-      <div class="muted-card" style="margin-bottom:6px; background:#fff;">
-        <span class="small-label">Modelo: ${m.modeloCodigo}</span>
-        <div class="big-value" style="white-space: pre-line; font-size:14px; margin-top:4px;">${m.descricao}</div>
-      </div>
-    `).join("");
-
-    return `
-      <div class="pedido ${p.status}" style="background:#f8fafc;">
-        <div class="pedido-body-inner">
-          <div class="pedido-head">
-            <div style="flex: 1; min-width: 250px;">
-              <span class="chip ${chipClass}">${p.status.replace("-"," ").toUpperCase()}</span>
-              <h3 style="margin:8px 0 4px 0; font-size:18px;">${p.cliente}</h3>
-              <div class="pedido-meta">
-                <strong>Vendedor:</strong> ${p.vendedor} | <strong>Destino:</strong> ${p.cidade}-${p.estado}
-              </div>
-              <div class="pedido-meta" style="font-size:11px; margin-top:2px;">
-                Entrada: ${p.createdDate || ""} às ${p.createdTime || ""}
-              </div>
-              ${p.historicoAlteracao ? `<div class="alteracao-aviso-box">⚠️ Alerta da Expedição: ${p.historicoAlteracao}</div>` : ""}
-            </div>
-            <div style="display:flex; flex-direction:column; gap:10px; align-items:flex-end;">
-              <div class="field" style="margin:0; min-width:160px;">
-                <label style="font-size:11px;">MUDAR STATUS:</label>
-                <select class="select-status-exp" data-id="${p.id}" style="padding:6px 10px; font-size:13px; border-radius:8px;">
-                  <option value="nao-visualizado" ${p.status==="nao-visualizado"?"selected":""}>Não visualizado</option>
-                  <option value="visualizado" ${p.status==="visualizado"?"selected":""}>Visualizado</option>
-                  <option value="em-separacao" ${p.status==="em-separacao"?"selected":""}>Em separação</option>
-                  <option value="falta-peca" ${p.status==="falta-peca"?"selected":""}>Falta peça</option>
-                  <option value="separado" ${p.status==="separado"?"selected":""}>Separado</option>
-                </select>
-              </div>
-              ${p.status === "separado" ? `<button class="btn btn-danger btn-excluir-exp" data-id="${p.id}" style="padding: 6px 12px; font-size: 12px; border-radius: 8px;">🗑️ Arquivar/Excluir</button>` : ""}
-            </div>
-          </div>
-          <div class="pedido-grid">
-            <div>${modelosHtml}</div>
-            ${p.obs ? `<div class="obsBox" style="background:#fff; border-color:#e2e8f0;"><strong>Observações:</strong>${p.obs}</div>` : ""}
-          </div>
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  document.querySelectorAll(".select-status-exp").forEach(sel => {
-    sel.addEventListener("change", async (e) => {
-      await atualizarStatusPedido(e.target.getAttribute("data-id"), e.target.value);
-    });
-  });
-
-  document.querySelectorAll(".btn-excluir-exp").forEach(btn => {
-    btn.addEventListener("click", async (e) => {
-      const targetBtn = e.target.closest(".btn-excluir-exp");
-      if (targetBtn && confirm("A expedição deseja remover/excluir este pedido concluído da lista?")) {
-        await deleteDoc(doc(db, "pedidos", targetBtn.getAttribute("data-id")));
-      }
-    });
-  });
-}
-
-// ==========================================
-// AÇÕES E REGRAS DE NEGÓCIO
-// ==========================================
-async function atualizarStatusPedido(id, novoStatus) {
-  try {
-    const pedidoAntigo = databasePedidos.get(id);
-    const agora = obterDataHoraLocal();
-    await updateDoc(doc(db, "pedidos", id), {
-      status: novoStatus,
-      updatedAt: serverTimestamp(),
-      updatedAtMs: Date.now(),
-      updatedDate: agora.date,
-      updatedTime: agora.time
-    });
-    
-    if (pedidoAntigo && pedidoAntigo.status !== novoStatus) {
-      // Dispara a Notificação Real pelo canal correto para o dono
-      await enviarPushOneSignal("identificador", `dono_${pedidoAntigo.vendedor}`, "🔄 Status do Pedido Atualizado!", `O pedido de ${pedidoAntigo.cliente} mudou para: ${novoStatus.replace("-"," ").toUpperCase()}`);
-    }
-  } catch (e) { console.error(e); }
-}
 
 function renderPedidoComposer() {
-  const container = $("pedidoBlocos");
-  if (!container) return;
+  const container = $("pedidoComposerBlocks");
+  container.innerHTML = "";
   
-  container.innerHTML = composerBlocks.map((b, idx) => `
-    <div class="model-block" style="margin-top:12px; position:relative;">
-      <div class="grid-2">
-        <div class="field">
-          <label>Código do Modelo</label>
-          <input type="text" class="composer-codigo" data-idx="${idx}" value="${b.modeloCodigo}" placeholder="Ex: 001">
-        </div>
-        <div class="field">
-          <label>Grade / Quantidades</label>
-          <textarea class="composer-desc" data-idx="${idx}" placeholder="Ex: 10 P, 20 M azul" style="min-height:45px; padding:8px; font-size:13px;">${b.descricao}</textarea>
-        </div>
+  composerBlocks.forEach((block, index) => {
+    const row = document.createElement("div");
+    row.className = "composer-row";
+    row.innerHTML = `
+      <div class="field" style="width: 140px;">
+        <select class="select-modelo" data-index="${index}">
+          <option value="001" ${block.modeloCodigo === "001" ? "selected" : ""}>MODELO 001</option>
+          <option value="002" ${block.modeloCodigo === "002" ? "selected" : ""}>MODELO 002</option>
+          <option value="003" ${block.modeloCodigo === "003" ? "selected" : ""}>MODELO 003</option>
+          <option value="004" ${block.modeloCodigo === "004" ? "selected" : ""}>MODELO 004</option>
+          <option value="005" ${block.modeloCodigo === "005" ? "selected" : ""}>MODELO 005</option>
+          <option value="006" ${block.modeloCodigo === "006" ? "selected" : ""}>MODELO 006</option>
+          <option value="007" ${block.modeloCodigo === "007" ? "selected" : ""}>MODELO 007</option>
+          <option value="008" ${block.modeloCodigo === "008" ? "selected" : ""}>MODELO 008</option>
+          <option value="009" ${block.modeloCodigo === "009" ? "selected" : ""}>MODELO 009</option>
+          <option value="010" ${block.modeloCodigo === "010" ? "selected" : ""}>MODELO 010</option>
+        </select>
       </div>
-      ${composerBlocks.length > 1 ? `<button type="button" class="btn-remove-block" data-idx="${idx}" style="position:absolute; top:-8px; right:-8px; background:#ef4444; color:white; border:none; border-radius:50%; width:22px; height:22px; font-size:11px; cursor:pointer; font-weight:bold;">X</button>` : ""}
-    </div>
-  `).join("");
-
-  const btnAdd = document.createElement("button");
-  btnAdd.type = "button";
-  btnAdd.className = "btn btn-ghost";
-  btnAdd.style = "margin-top:10px; width:100%; font-size:12px; padding:6px;";
-  btnAdd.textContent = "➕ Adicionar Outro Modelo";
-  btnAdd.addEventListener("click", () => {
-    composerBlocks.push({ modeloCodigo: "", descricao: "" });
-    renderPedidoComposer();
+      <div class="field flex-1">
+        <input type="text" class="input-desc" placeholder="Ex: 5 P, 10 M, 5 G cor azul" value="${block.descricao}" data-index="${index}">
+      </div>
+      ${composerBlocks.length > 1 ? `<button type="button" class="btn-remove-row" data-index="${index}">✕</button>` : ""}
+    `;
+    container.appendChild(row);
   });
-  container.appendChild(btnAdd);
 
-  document.querySelectorAll(".composer-codigo").forEach(input => {
-    input.addEventListener("input", (e) => {
-      composerBlocks[parseInt(e.target.getAttribute("data-idx"))].modeloCodigo = e.target.value;
+  // Listeners dos inputs do composer
+  document.querySelectorAll(".select-modelo").forEach(el => {
+    el.addEventListener("change", (e) => {
+      const idx = parseInt(e.target.getAttribute("data-index"));
+      composerBlocks[idx].modeloCodigo = e.target.value;
     });
   });
 
-  document.querySelectorAll(".composer-desc").forEach(txt => {
-    txt.addEventListener("input", (e) => {
-      composerBlocks[parseInt(e.target.getAttribute("data-idx"))].descricao = e.target.value;
+  document.querySelectorAll(".input-desc").forEach(el => {
+    el.addEventListener("input", (e) => {
+      const idx = parseInt(e.target.getAttribute("data-index"));
+      composerBlocks[idx].descricao = e.target.value;
     });
   });
 
-  document.querySelectorAll(".btn-remove-block").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      composerBlocks.splice(parseInt(e.target.getAttribute("data-idx")), 1);
+  document.querySelectorAll(".btn-remove-row").forEach(el => {
+    el.addEventListener("click", (e) => {
+      const idx = parseInt(e.target.getAttribute("data-index"));
+      composerBlocks.splice(idx, 1);
       renderPedidoComposer();
     });
   });
 }
 
-function ativarModoEdicao(id) {
-  const p = databasePedidos.get(id);
-  if (!p) return;
-  editandoId = id;
-  $("cliente").value = p.cliente || "";
-  $("estado").value = p.estado || "";
-  $("cidade").value = p.cidade || "";
-  $("obsPedido").value = p.obs || "";
-  composerBlocks = p.modelos && p.modelos.length ? JSON.parse(JSON.stringify(p.modelos)) : [{ modeloCodigo: "", descricao: "" }];
-  renderPedidoComposer();
-
-  $("editStatusBox").classList.remove("hidden");
-  $("editInfo").textContent = `Editando o pedido de: ${p.cliente}`;
-  $("btnEnviarPedido").textContent = "Salvar Alterações";
-  $("btnCancelarEdicao").style.display = "inline-block";
-  $("appDono").scrollIntoView({ behavior: "smooth" });
-}
-
-function clearEditMode() {
-  editandoId = null;
-  $("editStatusBox").classList.add("hidden");
-  $("btnEnviarPedido").textContent = "Enviar pedido";
-  $("btnCancelarEdicao").style.display = "none";
-}
-
-function obterDataHoraLocal() {
-  const agora = new Date();
-  const d = String(agora.getDate()).padStart(2, '0');
-  const m = String(agora.getMonth() + 1).padStart(2, '0');
-  const y = agora.getFullYear();
-  const brTime = agora.toLocaleTimeString("pt-BR", { hour12: false, hour: '2-digit', minute: '2-digit' });
-  return { date: `${d}/${m}/${y}`, time: brTime };
-}
-
 // ==========================================
-// MONITORAMENTO DE CLIQUES
+// RENDERIZAÇÃO E INTERAÇÃO COM FIREBASE
 // ==========================================
-if (typeof window !== "undefined") {
-  window.addEventListener("DOMContentLoaded", () => {
-    renderAll();
-    renderPedidoComposer();
 
-    $("btnEntrar").addEventListener("click", () => {
-      const perfil = $("perfilLogin").value;
-      salvarSessao(perfil, perfil === "dono" ? $("nomeDono").value : "Expedição");
-    });
+function renderPedidosDono() {
+  if (!session) return;
+  const container = $("listaPedidosDono");
+  container.innerHTML = "";
 
-    $("perfilLogin").addEventListener("change", (e) => {
-      if (e.target.value === "dono") $("campoDono").classList.remove("hidden");
-      else $("campoDono").classList.add("hidden");
-    });
+  const lista = Array.from(databasePedidos.values())
+    .filter(p => p.vendedor === session.nome)
+    .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
-    $("btnSairDono").addEventListener("click", () => {
-      localStorage.removeItem(SESSION_KEY); session = null; clearEditMode(); renderAll();
-    });
+  if (lista.length === 0) {
+    container.innerHTML = `<div class="empty">Nenhum pedido enviado ainda.</div>`;
+    return;
+  }
 
-    $("btnSairExp").addEventListener("click", () => {
-      localStorage.removeItem(SESSION_KEY); session = null; renderAll();
-    });
+  lista.forEach(p => {
+    const card = document.createElement("div");
+    card.className = `pedido-card status-${p.status}`;
+    
+    let itensHtml = "";
+    if (Array.isArray(p.itens)) {
+      p.itens.forEach(it => {
+        itensHtml += `<div class="item-badge"><strong>Mod. ${it.modeloCodigo}:</strong> ${it.descricao}</div>`;
+      });
+    }
 
-    $("btnCancelarEdicao").addEventListener("click", () => {
-      clearEditMode(); $("cliente").value = ""; $("estado").value = ""; $("cidade").value = ""; $("obsPedido").value = "";
-      composerBlocks = [{ modeloCodigo: "001", descricao: "" }]; renderPedidoComposer();
-    });
+    card.innerHTML = `
+      <div class="pedido-header">
+        <span class="pedido-id">#${p.id.substring(0,6).toUpperCase()}</span>
+        <span class="status-indicator">${p.status.toUpperCase().replace("-", " ")}</span>
+      </div>
+      <div class="pedido-body">
+        <p><strong>Cliente:</strong> ${p.cliente}</p>
+        <p><strong>Destino:</strong> ${p.cidade} - ${p.estado}</p>
+        <div class="pedido-itens-list">${itensHtml}</div>
+        ${p.obs ? `<p class="obs-text"><strong>Obs:</strong> ${p.obs}</p>` : ""}
+        ${p.motivoFalta ? `<div class="alteracao-aviso-box">⚠️ <strong>Aviso da Expedição:</strong> ${p.motivoFalta}</div>` : ""}
+      </div>
+      <div class="pedido-footer">
+        <span>Enviado em: ${p.createdDate} às ${p.createdTime}</span>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
 
-    $("btnEnviarPedido").addEventListener("click", async () => {
-      const cliente = $("cliente").value.trim();
-      const estado = $("estado").value.trim();
-      const city = $("cidade").value.trim();
-      const obs = $("obsPedido").value.trim();
+function renderPedidosExp() {
+  if (!session) return;
+  const container = $("listaPedidosExp");
+  container.innerHTML = "";
 
-      if (!cliente || !estado || !city) {
-        alert("Preencha Cliente, Estado e Cidade!"); return;
-      }
+  const search = $("searchExp").value.toLowerCase();
+  const filter = $("filterStatus").value;
 
-      const modelsValidos = composerBlocks.filter(b => b.modeloCodigo.trim() || b.descricao.trim());
-      if (modelsValidos.length === 0) {
-        alert("Adicione pelo menos um modelo!"); return;
-      }
+  const lista = Array.from(databasePedidos.values())
+    .filter(p => {
+      const matchSearch = p.cliente.toLowerCase().includes(search) || 
+                          p.vendedor.toLowerCase().includes(search) ||
+                          p.cidade.toLowerCase().includes(search) ||
+                          p.id.toLowerCase().includes(search);
+      const matchFilter = filter === "all" || p.status === filter;
+      return matchSearch && matchFilter;
+    })
+    .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
+  // Atualiza mini estatísticas
+  let total = 0, pendentes = 0, concluidos = 0;
+  databasePedidos.forEach(p => {
+    total++;
+    if (p.status === "separado") concluidos++;
+    else if (p.status === "nao-visualizado") pendentes++;
+  });
+  $("statTotalExp").innerText = total;
+  $("statPendExp").innerText = pendentes;
+  $("statSepExp").innerText = concluidos;
+
+  if (lista.length === 0) {
+    container.innerHTML = `<div class="empty">Nenhum pedido corresponde aos filtros.</div>`;
+    return;
+  }
+
+  lista.forEach(p => {
+    const card = document.createElement("div");
+    card.className = `pedido-card status-${p.status}`;
+
+    let itensHtml = "";
+    if (Array.isArray(p.itens)) {
+      p.itens.forEach(it => {
+        itensHtml += `<div class="item-badge"><strong>Mod. ${it.modeloCodigo}:</strong> ${it.descricao}</div>`;
+      });
+    }
+
+    card.innerHTML = `
+      <div class="pedido-header">
+        <span class="pedido-id">#${p.id.substring(0,6).toUpperCase()} (${p.vendedor})</span>
+        <div class="field" style="margin:0;">
+          <select class="select-status-update" data-id="${p.id}">
+            <option value="nao-visualizado" ${p.status === "nao-visualizado" ? "selected" : ""}>Não visualizado</option>
+            <option value="visualizado" ${p.status === "visualizado" ? "selected" : ""}>Visualizado</option>
+            <option value="em-separacao" ${p.status === "em-separacao" ? "selected" : ""}>Em separação</option>
+            <option value="falta-peca" ${p.status === "falta-peca" ? "selected" : ""}>Falta peça</option>
+            <option value="separado" ${p.status === "separado" ? "selected" : ""}>Separado (Concluído)</option>
+          </select>
+        </div>
+      </div>
+      <div class="pedido-body">
+        <p><strong>Cliente:</strong> ${p.cliente}</p>
+        <p><strong>Destino:</strong> ${p.cidade} - ${p.estado}</p>
+        <div class="pedido-itens-list">${itensHtml}</div>
+        ${p.obs ? `<p class="obs-text"><strong>Obs:</strong> ${p.obs}</p>` : ""}
+        
+        <div class="falta-peca-box" id="boxFalta_${p.id}" style="display: ${p.status === "falta-peca" ? "block" : "none"}; margin-top: 10px;">
+          <input type="text" id="inputFalta_${p.id}" placeholder="Escreva quais itens faltam..." value="${p.motivoFalta || ""}" style="padding: 8px; border-radius: 8px; border: 1px solid var(--line); width: 80%; font-size:13px;">
+          <button class="btn-salvar-falta" data-id="${p.id}" style="padding: 8px 12px; background: var(--warning); color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:700; font-size:12px;">Salvar</button>
+        </div>
+      </div>
+      <div class="pedido-footer">
+        <span>Recebido em: ${p.createdDate} às ${p.createdTime}</span>
+        <button class="btn-delete-pedido" data-id="${p.id}" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:700;">Excluir</button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+
+  // Eventos de alteração de status na expedição
+  document.querySelectorAll(".select-status-update").forEach(el => {
+    el.addEventListener("change", async (e) => {
+      const id = e.target.getAttribute("data-id");
+      const novoStatus = e.target.value;
+      const localDateTime = getLocalDateTime();
+      
       try {
-        const localDateTime = obterDataHoraLocal();
-
-        if (editandoId) {
-          const pedAntigo = databasePedidos.get(editandoId);
-          let novoStatus = pedAntigo ? pedAntigo.status : "nao-visualizado";
-          if (novoStatus === "separado") {
-            novoStatus = "nao-visualizado";
-          }
-
-          const textoAlteracao = `Alterado por ${session.nome} às ${localDateTime.time} - ${localDateTime.date}`;
-
-          await updateDoc(doc(db, "pedidos", editandoId), {
-            cliente, estado, cidade: city, obs, modelos: modelsValidos,
+        if (novoStatus === "falta-peca") {
+          $(`boxFalta_${id}`).style.display = "block";
+          await updateDoc(doc(db, "pedidos", id), { 
             status: novoStatus,
-            historicoAlteracao: textoAlteracao,
-            updatedAt: serverTimestamp(),
-            updatedAtMs: Date.now(),
-            updatedDate: localDateTime.date,
-            updatedTime: localDateTime.time
+            updatedDate: localDateTime.date, updatedTime: localDateTime.time
           });
-          clearEditMode();
         } else {
-          await addDoc(pedidosRef, {
-            vendedor: session.nome, cliente, estado, cidade: city, obs, modelos: modelsValidos, status: "nao-visualizado",
-            historicoAlteracao: "",
-            createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
-            createdAtMs: Date.now(), updatedAtMs: Date.now(),
-            createdDate: localDateTime.date, createdTime: localDateTime.time,
+          $(`boxFalta_${id}`).style.display = "none";
+          await updateDoc(doc(db, "pedidos", id), { 
+            status: novoStatus, motivoFalta: "",
             updatedDate: localDateTime.date, updatedTime: localDateTime.time
           });
 
-          // Dispara Notificação Real para a expedição informando o novo pedido
-          await enviarPushOneSignal("identificador", "expedicao", "📦 Novo pedido recebido!", `De ${session.nome} para ${cliente}.`);
+          // Pega os dados do pedido para saber quem é o dono/vendedor
+          const pedidoInfo = databasePedidos.get(id);
+          if (pedidoInfo) {
+            let msgStatus = `O status do seu pedido mudou para: ${novoStatus.toUpperCase().replace("-", " ")}`;
+            if (novoStatus === "separado") msgStatus = `🎉 Seu pedido de ${pedidoInfo.cliente} está SEPARADO e pronto!`;
+            
+            // Dispara a Notificação de volta para o Dono que criou o pedido
+            await enviarPushOneSignal("identificador", `dono_${pedidoInfo.vendedor}`, "🔄 Status do Pedido Atualizado", msgStatus);
+          }
         }
+      } catch (err) { console.error(err); }
+    });
+  });
+
+  document.querySelectorAll(".btn-salvar-falta").forEach(el => {
+    el.addEventListener("click", async (e) => {
+      const id = e.target.getAttribute("data-id");
+      const motivo = $(`inputFalta_${id}`).value;
+      const localDateTime = getLocalDateTime();
+      try {
+        await updateDoc(doc(db, "pedidos", id), { 
+          motivoFalta: motivo,
+          updatedDate: localDateTime.date, updatedTime: localDateTime.time
+        });
         
-        $("cliente").value = ""; $("estado").value = ""; $("cidade").value = ""; $("obsPedido").value = "";
-        composerBlocks = [{ modeloCodigo: "001", descricao: "" }]; renderPedidoComposer();
-      } catch (e) { console.error(e); }
+        const pedidoInfo = databasePedidos.get(id);
+        if (pedidoInfo) {
+          // Alerta o dono especificando a falta de mercadoria
+          await enviarPushOneSignal("identificador", `dono_${pedidoInfo.vendedor}`, "⚠️ Falta de Peça no Pedido", `Falta no pedido de ${pedidoInfo.cliente}: ${motivo}`);
+        }
+        alert("Motivo de falta salvo e notificado ao vendedor!");
+      } catch (err) { console.error(err); }
+    });
+  });
+
+  document.querySelectorAll(".btn-delete-pedido").forEach(el => {
+    el.addEventListener("click", async (e) => {
+      if (confirm("Deseja realmente apagar este pedido do histórico do banco de dados?")) {
+        const id = e.target.getAttribute("data-id");
+        try { await deleteDoc(doc(db, "pedidos", id)); } catch (err) { console.error(err); }
+      }
+    });
+  });
+}
+
+// ==========================================
+// BIND DE EVENTOS GERAIS DA INTERFACE
+// ==========================================
+
+if (typeof window !== "undefined") {
+  window.addEventListener("DOMContentLoaded", () => {
+    checkSession();
+    renderPedidoComposer();
+
+    $("btnAddModelRow").addEventListener("click", () => {
+      composerBlocks.push({ modeloCodigo: "001", descricao: "" });
+      renderPedidoComposer();
+    });
+
+    $("btnEntrar").addEventListener("click", () => {
+      const nome = $("nomeVendedor").value.trim();
+      const perfil = $("perfilLogin").value;
+
+      if (!nome) {
+        alert("Por favor, digite o seu nome para acessar.");
+        return;
+      }
+
+      session = { nome, perfil };
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      showDashboard();
+    });
+
+    $("btnSairDono").addEventListener("click", logout);
+    $("btnSairExp").addEventListener("click", logout);
+
+    function logout() {
+      if (confirm("Deseja encerrar a sessão atual no aparelho?")) {
+        localStorage.removeItem(SESSION_KEY);
+        session = null;
+        showLogin();
+      }
+    }
+
+    $("formNovoPedido").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!session) return;
+
+      const cliente = $("cliente").value.trim();
+      const estado = $("estado").value;
+      const cidade = $("cidade").value.trim();
+      const obs = $("obsPedido").value.trim();
+
+      if (!cliente || !cidade) {
+        alert("Preencha o Nome do Cliente e a Cidade.");
+        return;
+      }
+
+      // Valida se preencheu pelo menos um bloco de descrição
+      const possuiDescricao = composerBlocks.some(b => b.descricao.trim() !== "");
+      if (!possuiDescricao) {
+        alert("Preencha a descrição de tamanhos/cores de pelo menos um modelo.");
+        return;
+      }
+
+      const localDateTime = getLocalDateTime();
+
+      try {
+        const docRef = await addDoc(pedidosRef, {
+          vendedor: session.nome,
+          cliente,
+          estado,
+          cidade,
+          obs,
+          status: "nao-visualizado",
+          motivoFalta: "",
+          itens: composerBlocks,
+          timestamp: serverTimestamp(),
+          createdDate: localDateTime.date,
+          createdTime: localDateTime.time,
+          updatedDate: localDateTime.date,
+          updatedTime: localDateTime.time
+        });
+
+        // Dispara Notificação Real para a expedição informando o novo pedido
+        await enviarPushOneSignal("identificador", "expedicao", "📦 Novo pedido recebido!", `De ${session.nome} para ${cliente}.`);
+        
+        $("cliente").value = ""; $("estado").value = "CE"; $("cidade").value = ""; $("obsPedido").value = "";
+        composerBlocks = [{ modeloCodigo: "001", descricao: "" }]; 
+        renderPedidoComposer();
+        alert("Pedido enviado com sucesso para a Expedição!");
+      } catch (err) { console.error(err); }
     });
 
     $("btnExemplo").addEventListener("click", () => {
       $("cliente").value = "Loja Exemplo"; $("estado").value = "CE"; $("cidade").value = "Fortaleza";
-      composerBlocks = [{ modeloCodigo: "001", descricao: "10 P preto" }]; renderPedidoComposer();
+      composerBlocks = [{ modeloCodigo: "001", descricao: "10 P preto, 10 M rosa" }]; 
+      renderPedidoComposer();
     });
 
     $("searchExp").addEventListener("input", renderPedidosExp);
     $("filterStatus").addEventListener("change", renderPedidosExp);
     
+    // Vincula cliques de ativar notificações aos botões do HTML
     $("btnAtivarNotificacoesLogin").addEventListener("click", ativarNotificacoes);
     $("btnAtivarNotificacoesDono").addEventListener("click", ativarNotificacoes);
     $("btnAtivarNotificacoesExp").addEventListener("click", ativarNotificacoes);
   });
 }
 
+// Ouvinte em tempo real do banco de dados Firebase
 onSnapshot(pedidosRef, (snapshot) => {
   const next = new Map();
   snapshot.forEach(d => next.set(d.id, { id: d.id, ...d.data() }));
