@@ -300,7 +300,6 @@ input:focus,select:focus,textarea:focus{
   line-height:1.45;
 }
 
-.login-shell{max-width:780px; margin:40px auto 0}
 .detail-box{
   border:1px solid var(--line);
   border-radius:18px;
@@ -489,53 +488,156 @@ input:focus,select:focus,textarea:focus{
 }
 
 /* ==========================================
-   NOVOS AJUSTES DE CORREÇÃO (LOGO E BOTOES)
+   ESTRUTURA DE LOGIN ATUALIZADA (CORREÇÃO)
    ========================================== */
 
-/* Corrige e centraliza a logo no ecrã de login */
-.login-shell img {
+/* Centraliza o login no meio da tela */
+.login-container {
+  max-width: 450px;
+  margin: 60px auto;
+  padding: 0 16px;
+}
+
+/* Alinha o card de login */
+.login-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 30px 24px;
+  text-align: center;
+}
+
+.login-card h2 {
+  margin: 0 0 20px 0;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+/* ⬇️ DOMA O TAMANHO DA LOGO ENORME DO SEU PRINT ⬇️ */
+.login-logo {
   max-width: 160px !important;
   height: auto !important;
-  margin: 0 auto 20px auto !important;
+  margin: 0 auto 15px auto !important;
   display: block !important;
 }
 
-/* Garante tamanho controlado para logos em seções internas (ex: heros) */
-.hero img, .page-title img {
-  max-width: 120px !important;
+/* Controla o tamanho das logos nos cabeçalhos internos */
+.nav-logo {
+  max-width: 110px !important;
   height: auto !important;
+  object-fit: contain;
 }
 
-/* Formatação do botão OneSignal do login */
+/* Deixa os botões ocupando 100% da largura do card de forma simétrica */
+.btn-block {
+  width: 100% !important;
+  display: block;
+  box-sizing: border-box;
+}
+
+/* Ajusta o espaçamento do botão de notificações do login */
 #btnAtivarNotificacoesLogin {
-  width: 100%;
-  padding: 12px;
-  background: #f3f4f6;
-  color: #111827;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  font-weight: 800;
-  font-size: 14px;
-  cursor: pointer;
   margin-top: 10px;
-  transition: .15s ease;
+  padding: 12px;
+  font-weight: 700;
 }
 
-#btnAtivarNotificacoesLogin:hover {
-  background: #e5e7eb;
-  transform: translateY(-1px);
+/* Ajuste nos cabeçalhos e estruturas internas das páginas */
+.app-header {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow);
 }
 
-/* Alinhamento dos botões internos do OneSignal */
-#btnAtivarNotificacoesDono,
-#btnAtivarNotificacoesExp {
-  width: 100%;
-  margin-top: 12px;
+.header-expedicao {
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  color: white;
+  border: none;
 }
+
+.header-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-info h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.header-info p {
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.header-expedicao .header-info p {
+  color: #94a3b8;
+}
+
+.container {
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.layout-grid {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.stat-num {
+  font-size: 26px;
+  font-weight: 900;
+}
+
+.stat-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.filter-bar {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.flex-1 { flex: 1; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-buttons { display: flex; gap: 10px; margin-top: 15px; }
 
 @media (max-width: 980px){
-  .grid-login,.app-shell,.split,.stats,.address-grid,.pedido-subgrid{grid-template-columns:1fr}
-  .sidebar{position:static}
-  .model-block-head{flex-direction:column; align-items:stretch}
-  .model-block .field select{min-width:0}
+  .layout-grid, .stats-grid, .filter-bar, .grid-2 { grid-template-columns: 1fr; flex-direction: column; }
 }
