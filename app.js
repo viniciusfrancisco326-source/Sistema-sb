@@ -54,36 +54,33 @@ function salvarSessao(perfil, nome) {
 async function vincularUsuarioOneSignal() {
   if (!session) return;
   try {
-    window.OneSignal = window.OneSignal || [];
-    window.OneSignal.push(async function() {
-      // Garante a Tag Única para o plano Free funcionar perfeitamente
-      if (session.perfil === "dono") {
-        await window.OneSignal.User.addTag("identificador", `dono_${session.nome}`);
-        console.log(`[OneSignal] Tag configurada: identificador = dono_${session.nome}`);
-      } else {
-        await window.OneSignal.User.addTag("identificador", "expedicao");
-        console.log(`[OneSignal] Tag configurada: identificador = expedicao`);
-      }
-    });
-  } catch (e) { console.error(e); }
+    // Na v16 chamamos a tag diretamente sem o window.OneSignal.push()
+    if (session.perfil === "dono") {
+      await OneSignal.User.addTag("identificador", `dono_${session.nome}`);
+      console.log(`[OneSignal] Tag configurada: identificador = dono_${session.nome}`);
+    } else {
+      await OneSignal.User.addTag("identificador", "expedicao");
+      console.log(`[OneSignal] Tag configurada: identificador = expedicao`);
+    }
+  } catch (e) { 
+    console.error("[OneSignal Tag Error]", e); 
+  }
 }
 
 async function ativarNotificacoes() {
   try {
-    window.OneSignal = window.OneSignal || [];
-    window.OneSignal.push(async function() {
-      console.log("[OneSignal] Chamando interface de inscrição...");
-      
-      // Valida suporte a push no navegador antes de prosseguir
-      if (!window.OneSignal.Notifications.isPushSupported()) {
-        alert("Este navegador não possui suporte a Notificações Push.");
-        return;
-      }
+    console.log("[OneSignal] Chamando interface de inscrição...");
+    
+    // Valida suporte a push no navegador
+    if (!OneSignal.Notifications.isPushSupported()) {
+      alert("Este navegador não possui suporte a Notificações Push.");
+      return;
+    }
 
-      // Dispara o prompt de forma assíncrona baseada na v16
-      await window.OneSignal.Slidedown.promptPush();
-      await vincularUsuarioOneSignal();
-    });
+    // Dispara o prompt e vincula a tag
+    await OneSignal.Slidedown.promptPush();
+    await vincularUsuarioOneSignal();
+    
   } catch (e) {
     console.error("[OneSignal SDK Error]", e);
     alert("Não foi possível processar a ativação. Atualize a página e tente novamente.");
