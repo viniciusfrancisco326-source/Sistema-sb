@@ -72,13 +72,26 @@ async function ativarNotificacoes() {
     console.log("[OneSignal] Chamando interface de inscrição...");
     
     // Valida suporte a push no navegador
-    if (!OneSignal.Notifications.isPushSupported()) {
+    if (!window.OneSignal || !window.OneSignal.Notifications.isPushSupported()) {
       alert("Este navegador não possui suporte a Notificações Push.");
       return;
     }
 
-    // Dispara o prompt e vincula a tag
-    await OneSignal.Slidedown.promptPush();
+    // 1. Verifica se já está permitido
+    if (window.OneSignal.Notifications.permission === "granted") {
+      await vincularUsuarioOneSignal(); // Garante as tags
+      alert("✅ Tudo certo! As notificações já estão ativadas para este aparelho.");
+      return;
+    }
+
+    // 2. Verifica se o usuário bloqueou antes
+    if (window.OneSignal.Notifications.permission === "denied") {
+      alert("❌ As notificações estão bloqueadas neste navegador! Clique no ícone de cadeado ao lado do link do site, mude 'Notificações' para 'Permitir' e tente novamente.");
+      return;
+    }
+
+    // 3. Se for a primeira vez (default), abre a janela do OneSignal
+    await window.OneSignal.Slidedown.promptPush();
     await vincularUsuarioOneSignal();
     
   } catch (e) {
