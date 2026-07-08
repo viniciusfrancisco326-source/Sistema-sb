@@ -8,17 +8,15 @@
   <link rel="icon" type="image/png" href="Sou Bela -logo (3).png?v=1.0">
   
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
-  window.OneSignal = window.OneSignal || [];
-  OneSignal.push(function() {
-    OneSignal.init({
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
       appId: "000b8540-c342-4450-8ab0-797bbc3e7313",
       allowLocalhostAsSecure: true,
       serviceWorkerPath: "OneSignalSDKWorker.js",
       serviceWorkerParam: { scope: "/Sistema-sb/" },
-      notifyButton: {
-        enable: false,
-      }
     });
   });
 </script>
