@@ -49,16 +49,18 @@ function salvarSessao(perfil, nome) {
 }
 
 // ==========================================
-// INTEGRAÇÃO DO ONESIGNAL
+// INTEGRAÇÃO DO ONESIGNAL (OTIMIZADO PARA PLANO FREE)
 // ==========================================
 async function vincularUsuarioOneSignal() {
   if (!session) return;
   try {
     window.OneSignal = window.OneSignal || [];
     window.OneSignal.push(async function() {
-      await window.OneSignal.User.addTag("usuario_perfil", session.perfil);
+      // 💡 Correção Plano Free: Usamos apenas 1 tag contendo o perfil ou perfil_nome juntados.
       if (session.perfil === "dono") {
-        await window.OneSignal.User.addTag("usuario_nome", session.nome);
+        await window.OneSignal.User.addTag("identificador", `dono_${session.nome}`);
+      } else {
+        await window.OneSignal.User.addTag("identificador", "expedicao");
       }
     });
   } catch (e) { console.error(e); }
@@ -322,7 +324,8 @@ async function atualizarStatusPedido(id, novoStatus) {
     });
     
     if (pedidoAntigo && pedidoAntigo.status !== novoStatus) {
-      await enviarPushOneSignal("usuario_nome", pedidoAntigo.vendedor, "🔄 Status Updated!", `O pedido de ${pedidoAntigo.cliente} mudou para: ${novoStatus.replace("-"," ")}`);
+      // Envia o push direcionado para a tag única otimizada do dono correspondente
+      await enviarPushOneSignal("identificador", `dono_${pedidoAntigo.vendedor}`, "🔄 Status Updated!", `O pedido de ${pedidoAntigo.cliente} mudou para: ${novoStatus.replace("-"," ")}`);
     }
   } catch (e) { console.error(e); }
 }
@@ -490,7 +493,8 @@ if (typeof window !== "undefined") {
             updatedDate: localDateTime.date, updatedTime: localDateTime.time
           });
 
-          await enviarPushOneSignal("usuario_perfil", "expedicao", "📦 Novo pedido recebido!", `De ${session.nome} para ${cliente}.`);
+          // Dispara o push para a expedição
+          await enviarPushOneSignal("identificador", "expedicao", "📦 Novo pedido recebido!", `De ${session.nome} para ${cliente}.`);
         }
         
         $("cliente").value = ""; $("estado").value = ""; $("cidade").value = ""; $("obsPedido").value = "";
