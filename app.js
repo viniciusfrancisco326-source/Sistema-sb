@@ -407,7 +407,7 @@ function obterDataHoraLocal() {
   const agora = new Date();
   const d = String(agora.getDate()).padStart(2, '0');
   const m = String(agora.getMonth() + 1).padStart(2, '0');
-  const y = ago.getFullYear();
+  const y = agora.getFullYear();
   const brTime = agora.toLocaleTimeString("pt-BR", { hour12: false, hour: '2-digit', minute: '2-digit' });
   return { date: `${d}/${m}/${y}`, time: brTime };
 }
