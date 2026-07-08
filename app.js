@@ -6,14 +6,9 @@ import {
   updateDoc,
   deleteDoc,
   doc,
-  setDoc,
   onSnapshot,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import {
-  getMessaging,
-  getToken
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
 
 // ==========================================
 // CREDENCIAIS DO SEU NOVO FIREBASE
@@ -29,10 +24,12 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const messaging = getMessaging(app);
 const pedidosRef = collection(db, "pedidos");
 
 const SESSION_KEY = "sistema_sou_bela_sessao_v13";
+
+// COLQUE SEU APP ID DO ONESIGNAL AQUI
+const ONESIGNAL_APP_ID = "000b8540-c342-4450-8ab0-797bbc3e7313"; 
 
 const STATUS = {
   "nao-visualizado": { label: "Não visualizado", cls: "nao-visualizado", chip: "red" },
@@ -114,25 +111,41 @@ function fmtUpdated(p) {
   return p.updatedDate && p.updatedTime ? `${p.updatedDate} às ${p.updatedTime}` : (p.updatedDate || "-");
 }
 
-function notify(title, body) {
-  if (Notification.permission === "granted") {
-    try { new Notification(title, { body, icon: "Sou Bela -logo (3).png" }); } catch {}
-  }
+// Vincula o celular ao nome do usuário logado no OneSignal
+function vincularUsuarioOneSignal() {
+  if (!session || typeof OneSignal === "undefined") return;
+  
+  OneSignal.Deferred.push(function() {
+    // Define uma etiqueta para sabermos de quem é esse celular
+    OneSignal.User.addTag("usuario_nome", session.nome);
+    OneSignal.User.addTag("usuario_perfil", session.perfil);
+    console.log("Celular vinculado no OneSignal para:", session.nome);
+  });
 }
 
-async function salvarTokenUsuario(token) {
-  if (!session) return;
+// Dispara a notificação em segundo plano usando a API gratuita deles
+async function enviarPushOneSignal(filtroTag, filtroValor, titulo, mensagem) {
+  if (ONESIGNAL_APP_ID === "SEU_APP_ID_DO_ONESIGNAL_AQUI") return;
+  
   try {
-    const ref = doc(db, "usuarios", session.nome);
-    await setDoc(ref, {
-      nome: session.nome,
-      perfil: session.perfil,
-      tokenNotification: token,
-      updatedAt: serverTimestamp()
-    }, { merge: true });
-    console.log("Token salvo com sucesso para:", session.nome);
+    await fetch("https://onesignal.com/api/v1/notifications", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json; charset=utf-8"
+      },
+      body: JSON.stringify({
+        app_id: ONESIGNAL_APP_ID,
+        contents: { "en": mensagem, "pt": mensagem },
+        headings: { "en": titulo, "pt": titulo },
+        target_channel: "push",
+        filters: [
+          { "field": "tag", "key": filtroTag, "relation": "=", "value": filtroValor }
+        ]
+      })
+    });
+    console.log("Push enviado em segundo plano via OneSignal!");
   } catch (e) {
-    console.error("Erro ao salvar o token no banco:", e);
+    console.error("Erro ao enviar push via OneSignal:", e);
   }
 }
 
@@ -158,6 +171,7 @@ function renderDono() {
   renderEditBox();
   if (!composerBlocks.length) composerBlocks = [{ modeloCodigo: "001", descricao: "" }];
   renderPedidoComposer();
+  vincularUsuarioOneSignal();
 }
 function renderExpedicao() {
   $("loginScreen").classList.add("hidden");
@@ -165,6 +179,7 @@ function renderExpedicao() {
   $("appExpedicao").classList.remove("hidden");
   renderStats();
   renderPedidosExp();
+  vincularUsuarioOneSignal();
 }
 function renderAll() {
   if (!session) return renderLogin();
@@ -551,6 +566,7 @@ window.mostrarCampoObs = function(id, event) {
   const wrap = document.getElementById(`obsWrap-${id}`);
   if (sel && wrap) wrap.style.display = sel.value === "separado" ? "none" : "block";
 };
+
 window.atualizarPedido = async function(id) {
   try {
     if (!session || session.perfil !== "expedicao") {
@@ -582,11 +598,17 @@ window.atualizarPedido = async function(id) {
       updatedDate: now.date,
       updatedTime: now.time
     });
+
+    // ACORDA O CELULAR DO VENDEDOR (Mesmo bloqueado via OneSignal)
+    const msgPush = `Seu pedido para ${p.cliente} mudou para: ${statusLabel(st)}.`;
+    await enviarPushOneSignal("usuario_nome", p.dono, "🔔 Status Atualizado!", msgPush);
+
   } catch (e) {
     console.error(e);
     alert("Não foi possível atualizar o pedido.");
   }
 };
+
 window.editarPedido = function(id) {
   const p = pedidos.find(x => x.id === id);
   if (!session || session.perfil !== "dono") {
@@ -665,37 +687,14 @@ window.excluirPedido = async function(id, origem) {
   }
 };
 
-async function ativarNotificacoes() {
-  try {
-    if (!("Notification" in window)) {
-      alert("Seu navegador não suporta notificações.");
-      return;
-    }
-
-    const perm = await Notification.requestPermission();
-    if (perm !== "granted") {
-      alert("Permissão de notificação negada.");
-      return;
-    }
-
-    // Registra o Service Worker e gera o Token em segundo plano (Estilo WhatsApp)
-    const registration = await navigator.serviceWorker.register("firebase-messaging-sw.js");
-    
-    // ATENÇÃO: Adicione aqui a sua chave pública (VAPID) quando ativar o FCM no painel do Firebase
-    const token = await getToken(messaging, { 
-      serviceWorkerRegistration: registration,
-      vapidKey: "BDVu28sh9HEnNldgXDZtOoaAfy4tkRgcKAlyBnIR3pIh5IBXu2w4nRot45OYZbV2DyKmxl4GVOnox06xdEykeio" 
+function ativarNotificacoes() {
+  if (typeof OneSignal !== "undefined") {
+    OneSignal.Deferred.push(function() {
+      OneSignal.User.PushSubscription.optIn();
+      alert("Configuração de notificações iniciada!");
     });
-
-    if (token) {
-      await salvarTokenUsuario(token);
-      alert("Notificações em segundo plano ativadas!");
-    } else {
-      alert("Permissão concedida, mas falha ao gerar o código do dispositivo.");
-    }
-  } catch (err) {
-    console.error(err);
-    alert("Não foi possível ativar as notificações completas.");
+  } else {
+    alert("O sistema de notificações ainda está carregando. Tente novamente em instantes.");
   }
 }
 
@@ -709,12 +708,7 @@ function setupEvents() {
 
     saveSession();
     renderAll();
-
-    try {
-      await ativarNotificacoes();
-    } catch (e) {
-      console.log(e);
-    }
+    ativarNotificacoes();
   });
 
   $("btnSairDono").addEventListener("click", () => {
@@ -867,6 +861,14 @@ function setupEvents() {
           editedTime: "",
           editedAtMs: 0
         });
+
+        // ACORDA O CELULAR DA EXPEDIÇÃO (Mesmo bloqueado via OneSignal)
+        await enviarPushOneSignal(
+          "usuario_perfil", 
+          "expedicao", 
+          "📦 Novo pedido recebido!", 
+          `Enviado por ${session.nome} para o cliente ${cliente}.`
+        );
       }
 
       $("cliente").value = "";
