@@ -641,3 +641,54 @@ input:focus,select:focus,textarea:focus{
 @media (max-width: 980px){
   .layout-grid, .stats-grid, .filter-bar, .grid-2 { grid-template-columns: 1fr; flex-direction: column; }
 }
+/* Cor exclusiva de destaque para os botões de Ativar Notificações */
+#btnAtivarNotificacoesLogin,
+#btnAtivarNotificacoesDono,
+#btnAtivarNotificacoesExp {
+  width: 100%;
+  padding: 14px;
+  background: var(--primary) !important; /* Muda para o rosa Sou Bela destacado */
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 12px;
+  box-shadow: 0 4px 12px rgba(214, 51, 132, 0.2);
+  transition: .15s ease;
+  display: block;
+}
+
+#btnAtivarNotificacoesLogin:hover,
+#btnAtivarNotificacoesDono:hover,
+#btnAtivarNotificacoesExp:hover {
+  background: var(--primary-dark) !important;
+  transform: translateY(-1px);
+}
+
+/* Caixa de aviso amarela para notificações de modificação na Expedição */
+.alteracao-aviso-box {
+  margin-top: 10px;
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  display: block;
+  line-height: 1.4;
+}
+
+/* Etiqueta pequena de modificação para a listagem dos donos */
+.alteracao-aviso-tag {
+  display: inline-block;
+  margin-top: 6px;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
