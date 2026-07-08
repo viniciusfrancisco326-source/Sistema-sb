@@ -1,251 +1,185 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sistema Expedição Sou Bela</title>
-  <link rel="icon" type="image/png" href="Sou Bela -logo (3).png">
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema Sou Bela - Expedição</title>
+  <link rel="stylesheet" href="style.css">
+  
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-<script>
-  window.OneSignal = window.OneSignal || [];
-  OneSignal.push(function() {
-    OneSignal.init({
-      appId: "000b8540-c342-4450-8ab0-797bbc3e7313",
-      safari_web_id: "web.onesignal.auto.17b4c688-6623-4017-91fb-60e03e5c9a09", // Gerado automaticamente pelo OneSignal
-      notifyButton: {
-        enable: false, // Deixa desativado o sininho flutuante padrão deles para não atrapalhar o visual do seu site
-      },
+  <script>
+    window.OneSignal = window.OneSignal || [];
+    OneSignal.push(function() {
+      OneSignal.init({
+        appId: "000b8540-c342-4450-8ab0-797bbc3e7313",
+        notifyButton: {
+          enable: false, // Oculta o botão flutuante padrão deles
+        },
+      });
     });
-  });
-</script>
+  </script>
 </head>
 <body>
-  <div class="shell">
-    <div class="page">
 
-      <div id="loginScreen" class="login-shell">
+  <div id="loginScreen" class="login-container">
+    <div class="login-card">
+      <img src="Sou bela -logo.png" alt="Logo Sou Bela" class="login-logo">
+      <h2>Acesso ao Sistema</h2>
+      
+      <div class="field">
+        <label for="perfilLogin">Quem está acessando?</label>
+        <select id="perfilLogin">
+          <option value="dono">Vendas (Donos)</option>
+          <option value="expedicao">Expedição</option>
+        </select>
+      </div>
+
+      <div class="field" id="campoDono">
+        <label for="nomeDono">Seu Nome</label>
+        <select id="nomeDono">
+          <option value="Fabio">Fabio</option>
+          <option value="Dona Lene">Dona Lene</option>
+        </select>
+      </div>
+
+      <button id="btnEntrar" class="btn btn-primary btn-block">Entrar no Sistema</button>
+      <button id="btnAtivarNotificacoesLogin" class="btn btn-ghost btn-block" style="margin-top:10px;">🔔 Ativar Notificações neste Aparelho</button>
+    </div>
+  </div>
+
+  <div id="appDono" class="hidden">
+    <header class="app-header">
+      <div class="header-info">
+        <img src="Sou bela -logo.png" alt="Logo" class="nav-logo">
+        <div>
+          <h1 id="nomeSessaoDono">Logado como: -</h1>
+          <p>Painel de Controle de Pedidos</p>
+        </div>
+      </div>
+      <button id="btnSairDono" class="btn btn-danger">Sair</button>
+    </header>
+
+    <div class="container layout-grid">
+      <aside class="sidebar-form">
         <div class="card">
-          <div class="page-title">
-            <h1>Sistema de Pedidos e Expedição</h1>
-            <p class="sub">Escolha a área para entrar. Em Vendas, selecione quem está logando.</p>
+          <div class="card-header">
+            <h2>Enviar Novo Pedido</h2>
+          </div>
+          
+          <div class="field">
+            <label for="cliente">Nome da Loja / Cliente</label>
+            <input type="text" id="cliente" placeholder="Ex: Loja Centro">
           </div>
 
-          <div class="grid-login">
-            <section class="card inner-card">
-              <h2>Entrar</h2>
-              <p class="sub">Sem senha. Só selecione a área correta.</p>
-
-              <div class="field">
-                <label for="perfilLogin">Área</label>
-                <select id="perfilLogin">
-                  <option value="dono">Vendas</option>
-                  <option value="expedicao">Expedição</option>
-                </select>
-              </div>
-
-              <div class="field" id="campoDono">
-                <label for="nomeDono">Quem está entrando em Vendas?</label>
-                <select id="nomeDono">
-                  <option value="Dona Lene">Dona Lene</option>
-                  <option value="Fabio">Fabio</option>
-                </select>
-              </div>
-
-              <button class="btn btn-primary" id="btnEntrar">Entrar</button>
-              <div class="actions">
-                <button class="btn btn-ghost" id="btnAtivarNotificacoesLogin">Ativar notificações</button>
-              </div>
-
-              <div class="help">
-                <div class="help-line"><span>Vendas</span><strong>Dona Lene / Fabio</strong></div>
-                <div class="help-line"><span>Expedição</span><strong>Entrada direta</strong></div>
-              </div>
-            </section>
-
-            <section class="card inner-card">
-              <h2>Como funciona</h2>
-              <p class="sub">Vendas envia os pedidos e vê só os próprios. Expedição marca status e escreve observações.</p>
-              <div class="note">
-                Em qualquer status diferente de <strong>Separado</strong>, a expedição pode deixar observação.
-                Para <strong>Falta peça</strong>, a observação fica obrigatória.
-              </div>
-            </section>
+          <div class="grid-2">
+            <div class="field">
+              <label for="estado">Estado</label>
+              <input type="text" id="estado" placeholder="Ex: CE">
+            </div>
+            <div class="field">
+              <label for="cidade">Cidade</label>
+              <input type="text" id="cidade" placeholder="Ex: Fortaleza">
+            </div>
           </div>
+
+          <div id="pedidoBlocos"></div>
+
+          <div class="field" style="margin-top:15px;">
+            <label for="obsPedido">Observações Gerais do Pedido</label>
+            <textarea id="obsPedido" placeholder="Ex: Embalar para presente, urgência na entrega..."></textarea>
+          </div>
+
+          <div id="editStatusBox" class="hidden alert alert-warning">
+            <p id="editInfo"></p>
+          </div>
+
+          <div class="form-buttons">
+            <button id="btnEnviarPedido" class="btn btn-primary flex-1">Enviar pedido</button>
+            <button id="btnCancelarEdicao" class="btn btn-ghost" style="display:none;">Cancelar</button>
+          </div>
+          
+          <button id="btnExemplo" class="btn btn-ghost btn-block" style="margin-top:10px;">Preencher Exemplo Rápido</button>
+          <button id="btnAtivarNotificacoesDono" class="btn btn-ghost btn-block" style="margin-top:10px;">🔔 Recalibrar Alertas</button>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-num" id="statTotalDono">0</div>
+            <div class="stat-label">Meus Pedidos</div>
+          </div>
+          <div class="stat-card status-pendente">
+            <div class="stat-num" id="statPendentesDono">0</div>
+            <div class="stat-label">Pendentes</div>
+          </div>
+          <div class="stat-card status-separado">
+            <div class="stat-num" id="statSeparadosDono">0</div>
+            <div class="stat-label">Separados</div>
+          </div>
+        </div>
+
+        <div class="section-title">
+          <h2>Histórico de Pedidos de <span id="nomePedidosDono">-</span></h2>
+        </div>
+
+        <div id="listaPedidosDono" class="pedidos-container">
+          <div class="empty">Carregando seus pedidos...</div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="appExpedicao" class="hidden">
+    <header class="app-header header-expedicao">
+      <div class="header-info">
+        <img src="Sou bela -logo.png" alt="Logo" class="nav-logo">
+        <div>
+          <h1>Painel da Expedição</h1>
+          <p>Gerenciamento Geral de Demandas</p>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button id="btnAtivarNotificacoesExp" class="btn btn-ghost" style="color:white; border-color:rgba(255,255,255,0.3)">🔔 Ativar Alertas</button>
+        <button id="btnSairExp" class="btn btn-danger">Sair</button>
+      </div>
+    </header>
+
+    <div class="container main-expedicao">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-num" id="statTotalExp">0</div>
+          <div class="stat-label">Total Geral</div>
+        </div>
+        <div class="stat-card status-pendente">
+          <div class="stat-num" id="statPendExp">0</div>
+          <div class="stat-label">Fila de Espera</div>
+        </div>
+        <div class="stat-card status-separado">
+          <div class="stat-num" id="statSepExp">0</div>
+          <div class="stat-label">Concluídos</div>
         </div>
       </div>
 
-      <div id="appDono" class="hidden">
-        <div class="hero">
-          <div>
-            <p class="eyebrow">Sistema de Vendas Sou Bela</p>
-            <h1>Painel de Vendas</h1>
-            <p id="nomeSessaoDono"></p>
-          </div>
-          <div class="badge">Área de envio</div>
+      <div class="filter-bar">
+        <div class="field flex-1">
+          <input type="text" id="searchExp" placeholder="🔎 Buscar por cliente, vendedor, cidade, modelo ou ID...">
         </div>
-
-        <div class="app-shell">
-          <aside class="sidebar">
-            <div class="role">Perfil</div>
-            <h2>Vendas</h2>
-            <div class="who" id="nomeSidebarDono"></div>
-            <p class="tiny">Somente envio de pedidos e consulta dos próprios pedidos.</p>
-            <div class="actions">
-              <button class="btn btn-dark" id="btnSairDono">Sair</button>
-              <button class="btn btn-ghost" id="btnAtivarNotificacoesDono">Ativar notificações</button>
-            </div>
-          </aside>
-
-          <main class="main">
-            <div class="section-title">
-              <div>
-                <h3>Novo pedido</h3>
-                <p>Preencha o cliente, o endereço e os itens por modelo.</p>
-              </div>
-            </div>
-
-            <div class="split">
-              <section class="card inner-card">
-                <div class="field">
-                  <label for="cliente">Cliente</label>
-                  <input id="cliente" type="text" placeholder="Nome do cliente" />
-                </div>
-
-                <div class="address-grid">
-                  <div class="field">
-                    <label for="estado">Estado</label>
-                    <input id="estado" type="text" placeholder="Ex: Ceará" />
-                  </div>
-                  <div class="field">
-                    <label for="cidade">Cidade</label>
-                    <input id="cidade" type="text" placeholder="Ex: Juazeiro do Norte" />
-                  </div>
-                </div>
-
-                <div class="field">
-                  <label>Modelos do pedido</label>
-                  <div id="pedidoBlocos"></div>
-                </div>
-
-                <div class="field">
-                  <label for="obsPedido">Observações do pedido</label>
-                  <textarea id="obsPedido" placeholder="Observações extras, se houver"></textarea>
-                </div>
-
-                <div class="actions">
-                  <button class="btn btn-primary" id="btnEnviarPedido">Enviar pedido</button>
-                  <button class="btn btn-ghost" id="btnCancelarEdicao" style="display:none;">Cancelar edição</button>
-                  <button class="btn btn-ghost" id="btnExemplo">Preencher exemplo</button>
-                </div>
-
-                <div id="editStatusBox" class="edit-box hidden">
-                  <strong>Modo de edição ativo</strong>
-                  <div class="tiny" id="editInfo"></div>
-                </div>
-              </section>
-
-              <section class="card inner-card">
-                <h3 style="margin-top:0">Resumo</h3>
-                <div class="stats">
-                  <div class="stat">
-                    <span class="label">Meus pedidos</span>
-                    <div class="value" id="statTotalDono">0</div>
-                  </div>
-                  <div class="stat">
-                    <span class="label">Pendentes</span>
-                    <div class="value" id="statPendentesDono">0</div>
-                  </div>
-                  <div class="stat">
-                    <span class="label">Separados</span>
-                    <div class="value" id="statSeparadosDono">0</div>
-                  </div>
-                </div>
-
-                <div class="note">
-                  Aqui aparece só o que foi enviado por <strong id="nomePedidosDono"></strong>.
-                </div>
-              </section>
-            </div>
-
-            <section class="card inner-card list-section">
-              <div class="section-title">
-                <div>
-                  <h3>Meus pedidos</h3>
-                  <p>Pedidos enviados por este usuário.</p>
-                </div>
-              </div>
-              <div id="listaPedidosDono"></div>
-            </section>
-          </main>
+        <div class="field" style="min-width: 200px;">
+          <select id="filterStatus">
+            <option value="all">Todos os Status</option>
+            <option value="nao-visualizado">Não visualizado</option>
+            <option value="visualizado">Visualizado</option>
+            <option value="em-separacao">Em separação</option>
+            <option value="falta-peca">Falta peça</option>
+            <option value="separado">Separado (Concluído)</option>
+          </select>
         </div>
       </div>
 
-      <div id="appExpedicao" class="hidden">
-        <div class="hero">
-          <div>
-            <p class="eyebrow">Sistema de Expedição Sou Bela</p>
-            <h1>Painel da Expedição</h1>
-            <p>Abra um pedido para visualizar e mudar o status direto no próprio cartão.</p>
-          </div>
-          <div class="badge">Área de separação</div>
-        </div>
-
-        <div class="app-shell">
-          <aside class="sidebar">
-            <div class="role">Perfil</div>
-            <h2>Expedição</h2>
-            <div class="who">Operação</div>
-            <p class="tiny">Somente leitura dos pedidos e atualização de status.</p>
-            <div class="actions">
-              <button class="btn btn-dark" id="btnSairExp">Sair</button>
-              <button class="btn btn-ghost" id="btnAtivarNotificacoesExp">Ativar notificações</button>
-            </div>
-            <div class="note">
-              Quando o status for diferente de <strong>Separado</strong>, o pedido fica pendente.
-            </div>
-          </aside>
-
-          <main class="main">
-            <div class="section-title">
-              <div>
-                <h3>Pedidos recebidos</h3>
-                <p>Os pedidos aparecem sozinhos, sem atualizar a página.</p>
-              </div>
-            </div>
-
-            <div class="stats">
-              <div class="stat">
-                <span class="label">Total</span>
-                <div class="value" id="statTotalExp">0</div>
-              </div>
-              <div class="stat">
-                <span class="label">Pendentes</span>
-                <div class="value" id="statPendExp">0</div>
-              </div>
-              <div class="stat">
-                <span class="label">Separados</span>
-                <div class="value" id="statSepExp">0</div>
-              </div>
-            </div>
-
-            <div class="filters">
-              <input id="searchExp" placeholder="Buscar pedido, cliente, estado, cidade ou modelo..." />
-              <select id="filterStatus">
-                <option value="all">Todos os status</option>
-                <option value="nao-visualizado">Não visualizado</option>
-                <option value="visualizado">Visualizado</option>
-                <option value="em-separacao">Em separação</option>
-                <option value="falta-peca">Falta peça</option>
-                <option value="separado">Separado</option>
-              </select>
-            </div>
-
-            <div style="margin-top:16px" id="listaPedidosExp"></div>
-          </main>
-        </div>
+      <div id="listaPedidosExp" class="pedidos-container unified-exp">
+        <div class="empty">Carregando fila de expedição...</div>
       </div>
-
     </div>
   </div>
 
