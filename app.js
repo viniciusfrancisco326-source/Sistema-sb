@@ -317,7 +317,7 @@ async function atualizarStatusPedido(id, novoStatus) {
     });
     
     if (pedidoAntigo && pedidoAntigo.status !== novoStatus) {
-      await enviarPushOneSignal("usuario_nome", pedidoAntigo.vendedor, "🔄 Status Atualizado!", `O pedido de ${pedidoAntigo.cliente} mudou para: ${novoStatus.replace("-"," ")}`);
+      await enviarPushOneSignal("usuario_nome", pedidoAntigo.vendedor, "🔄 Status Updated!", `O pedido de ${pedidoAntigo.cliente} mudou para: ${novoStatus.replace("-"," ")}`);
     }
   } catch (e) { console.error(e); }
 }
@@ -373,7 +373,7 @@ function renderPedidoComposer() {
   });
 }
 
-function activarModoEdicao(id) {
+function ativarModoEdicao(id) {
   const p = databasePedidos.get(id);
   if (!p) return;
   editandoId = id;
@@ -448,8 +448,8 @@ if (typeof window !== "undefined") {
         alert("Preencha Cliente, Estado e Cidade!"); return;
       }
 
-      const modelosValidos = composerBlocks.filter(b => b.modeloCodigo.trim() || b.descricao.trim());
-      if (modelosValidos.length === 0) {
+      const modelsValidos = composerBlocks.filter(b => b.modeloCodigo.trim() || b.descricao.trim());
+      if (modelsValidos.length === 0) {
         alert("Adicione pelo menos um modelo!"); return;
       }
 
@@ -458,16 +458,15 @@ if (typeof window !== "undefined") {
 
         if (editandoId) {
           const pedAntigo = databasePedidos.get(editandoId);
-          // SE ESTAVA SEPARADO, RETORNA PARA "NAO-VISUALIZADO"
           let novoStatus = pedAntigo ? pedAntigo.status : "nao-visualizado";
           if (novoStatus === "separado") {
             novoStatus = "nao-visualizado";
           }
 
-          const textoAlteracao = `Alterado por ${session.nome} as ${localDateTime.time} - ${localDateTime.date}`;
+          const textoAlteracao = `Alterado por ${session.nome} às ${localDateTime.time} - ${localDateTime.date}`;
 
           await updateDoc(doc(db, "pedidos", editandoId), {
-            cliente, estado, cidade: city, obs, modelos: modelosValidos,
+            cliente, estado, cidade: city, obs, modelos: modelsValidos,
             status: novoStatus,
             historicoAlteracao: textoAlteracao,
             updatedAt: serverTimestamp(),
@@ -478,7 +477,7 @@ if (typeof window !== "undefined") {
           clearEditMode();
         } else {
           await addDoc(pedidosRef, {
-            vendedor: session.nome, cliente, estado, cidade: city, obs, modelos: modelosValidos, status: "nao-visualizado",
+            vendedor: session.nome, cliente, estado, cidade: city, obs, modelos: modelsValidos, status: "nao-visualizado",
             historicoAlteracao: "",
             createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
             createdAtMs: Date.now(), updatedAtMs: Date.now(),
