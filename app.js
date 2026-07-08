@@ -49,18 +49,20 @@ function salvarSessao(perfil, nome) {
 }
 
 // ==========================================
-// INTEGRAÇÃO DO ONESIGNAL (OTIMIZADO PARA PLANO FREE)
+// INTEGRAÇÃO COMPLETA DO ONESIGNAL (CORRIGIDA)
 // ==========================================
 async function vincularUsuarioOneSignal() {
   if (!session) return;
   try {
     window.OneSignal = window.OneSignal || [];
     window.OneSignal.push(async function() {
-      // 💡 Correção Plano Free: Usamos apenas 1 tag contendo o perfil ou perfil_nome juntados.
+      // Garante a Tag Única para o plano Free funcionar perfeitamente
       if (session.perfil === "dono") {
         await window.OneSignal.User.addTag("identificador", `dono_${session.nome}`);
+        console.log(`[OneSignal] Tag configurada: identificador = dono_${session.nome}`);
       } else {
         await window.OneSignal.User.addTag("identificador", "expedicao");
+        console.log(`[OneSignal] Tag configurada: identificador = expedicao`);
       }
     });
   } catch (e) { console.error(e); }
@@ -70,14 +72,38 @@ async function ativarNotificacoes() {
   try {
     window.OneSignal = window.OneSignal || [];
     window.OneSignal.push(async function() {
-      await window.OneSignal.Slidedown.promptPush();
+      console.log("[OneSignal] Solicitando permissão nativa...");
+      // Força a exibição da janela do navegador pedindo para "Permitir Notificações"
+      await window.OneSignal.Notifications.requestPermission();
       await vincularUsuarioOneSignal();
+      alert("Notificações ativadas com sucesso neste aparelho!");
     });
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error(e);
+    alert("Erro ao ativar notificações. Verifique as configurações do navegador.");
+  }
 }
 
+// Disparo real usando a API rest pública do OneSignal para web push
 async function enviarPushOneSignal(tagKey, tagValue, titulo, mensagem) {
-  console.log(`[Push] Enviando para ${tagKey}=${tagValue}: ${titulo} - ${mensagem}`);
+  console.log(`[Push] Disparando via API OneSignal para ${tagKey}=${tagValue}`);
+  try {
+    await fetch("https://onesignal.com/api/v1/notifications", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json; charset=utf-8"
+      },
+      body: JSON.stringify({
+        app_id: ONESIGNAL_APP_ID,
+        target_channel: "push",
+        filters: [
+          { field: "tag", key: tagKey, relation: "=", value: tagValue }
+        ],
+        contents: { en: mensagem, pt: mensagem },
+        headings: { en: titulo, pt: titulo }
+      })
+    });
+  } catch (e) { console.error("[OneSignal API Error]", e); }
 }
 
 // ==========================================
@@ -324,8 +350,8 @@ async function atualizarStatusPedido(id, novoStatus) {
     });
     
     if (pedidoAntigo && pedidoAntigo.status !== novoStatus) {
-      // Envia o push direcionado para a tag única otimizada do dono correspondente
-      await enviarPushOneSignal("identificador", `dono_${pedidoAntigo.vendedor}`, "🔄 Status Updated!", `O pedido de ${pedidoAntigo.cliente} mudou para: ${novoStatus.replace("-"," ")}`);
+      // Dispara a Notificação Real pelo canal correto para o dono
+      await enviarPushOneSignal("identificador", `dono_${pedidoAntigo.vendedor}`, "🔄 Status do Pedido Atualizado!", `O pedido de ${pedidoAntigo.cliente} mudou para: ${novoStatus.replace("-"," ").toUpperCase()}`);
     }
   } catch (e) { console.error(e); }
 }
@@ -493,7 +519,7 @@ if (typeof window !== "undefined") {
             updatedDate: localDateTime.date, updatedTime: localDateTime.time
           });
 
-          // Dispara o push para a expedição
+          // Dispara Notificação Real para a expedição informando o novo pedido
           await enviarPushOneSignal("identificador", "expedicao", "📦 Novo pedido recebido!", `De ${session.nome} para ${cliente}.`);
         }
         
