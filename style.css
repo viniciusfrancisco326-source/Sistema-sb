@@ -488,53 +488,54 @@ input:focus,select:focus,textarea:focus{
   color:var(--text);
 }
 
+/* ==========================================
+   NOVOS AJUSTES DE CORREÇÃO (LOGO E BOTOES)
+   ========================================== */
+
+/* Corrige e centraliza a logo no ecrã de login */
+.login-shell img {
+  max-width: 160px !important;
+  height: auto !important;
+  margin: 0 auto 20px auto !important;
+  display: block !important;
+}
+
+/* Garante tamanho controlado para logos em seções internas (ex: heros) */
+.hero img, .page-title img {
+  max-width: 120px !important;
+  height: auto !important;
+}
+
+/* Formatação do botão OneSignal do login */
+#btnAtivarNotificacoesLogin {
+  width: 100%;
+  padding: 12px;
+  background: #f3f4f6;
+  color: #111827;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: .15s ease;
+}
+
+#btnAtivarNotificacoesLogin:hover {
+  background: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+/* Alinhamento dos botões internos do OneSignal */
+#btnAtivarNotificacoesDono,
+#btnAtivarNotificacoesExp {
+  width: 100%;
+  margin-top: 12px;
+}
+
 @media (max-width: 980px){
   .grid-login,.app-shell,.split,.stats,.address-grid,.pedido-subgrid{grid-template-columns:1fr}
   .sidebar{position:static}
   .model-block-head{flex-direction:column; align-items:stretch}
   .model-block .field select{min-width:0}
-}
-/* ==========================================
-   AJUSTES DE TAMANHO DA LOGO E BOTÕES (ONESIGNAL)
-   ========================================== */
-
-/* Limita o tamanho da logo na tela de login */
-.login-logo {
-  max-width: 180px;
-  height: auto;
-  margin: 0 auto 20px auto;
-  display: block;
-}
-
-/* Limita o tamanho da logo no topo do sistema (Dono e Expedição) */
-.nav-logo {
-  max-width: 120px;
-  height: auto;
-  object-fit: contain;
-}
-
-/* Garante que os novos botões do OneSignal fiquem do tamanho certo */
-.btn-block {
-  width: 100%;
-  margin-top: 10px;
-  box-sizing: border-box;
-}
-
-/* Ajuste para o botão do OneSignal no topo da Expedição */
-.header-expedicao .btn-ghost {
-  padding: 8px 16px;
-  font-size: 0.9rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.header-expedicao .btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-/* Espaçamento extra para os botões de calibrar alertas nas barras laterais */
-#btnAtivarNotificacoesDono, 
-#btnAtivarNotificacoesExp {
-  margin-top: 15px;
 }
