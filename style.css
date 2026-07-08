@@ -494,3 +494,47 @@ input:focus,select:focus,textarea:focus{
   .model-block-head{flex-direction:column; align-items:stretch}
   .model-block .field select{min-width:0}
 }
+/* ==========================================
+   AJUSTES DE TAMANHO DA LOGO E BOTÕES (ONESIGNAL)
+   ========================================== */
+
+/* Limita o tamanho da logo na tela de login */
+.login-logo {
+  max-width: 180px;
+  height: auto;
+  margin: 0 auto 20px auto;
+  display: block;
+}
+
+/* Limita o tamanho da logo no topo do sistema (Dono e Expedição) */
+.nav-logo {
+  max-width: 120px;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Garante que os novos botões do OneSignal fiquem do tamanho certo */
+.btn-block {
+  width: 100%;
+  margin-top: 10px;
+  box-sizing: border-box;
+}
+
+/* Ajuste para o botão do OneSignal no topo da Expedição */
+.header-expedicao .btn-ghost {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.header-expedicao .btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Espaçamento extra para os botões de calibrar alertas nas barras laterais */
+#btnAtivarNotificacoesDono, 
+#btnAtivarNotificacoesExp {
+  margin-top: 15px;
+}
