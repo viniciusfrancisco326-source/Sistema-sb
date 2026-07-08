@@ -72,15 +72,21 @@ async function ativarNotificacoes() {
   try {
     window.OneSignal = window.OneSignal || [];
     window.OneSignal.push(async function() {
-      console.log("[OneSignal] Solicitando permissão nativa...");
-      // Força a exibição da janela do navegador pedindo para "Permitir Notificações"
-      await window.OneSignal.Notifications.requestPermission();
+      console.log("[OneSignal] Chamando interface de inscrição...");
+      
+      // Valida suporte a push no navegador antes de prosseguir
+      if (!window.OneSignal.Notifications.isPushSupported()) {
+        alert("Este navegador não possui suporte a Notificações Push.");
+        return;
+      }
+
+      // Dispara o prompt de forma assíncrona baseada na v16
+      await window.OneSignal.Slidedown.promptPush();
       await vincularUsuarioOneSignal();
-      alert("Notificações ativadas com sucesso neste aparelho!");
     });
   } catch (e) {
-    console.error(e);
-    alert("Erro ao ativar notificações. Verifique as configurações do navegador.");
+    console.error("[OneSignal SDK Error]", e);
+    alert("Não foi possível processar a ativação. Atualize a página e tente novamente.");
   }
 }
 
