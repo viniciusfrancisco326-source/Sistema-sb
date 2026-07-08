@@ -11,15 +11,14 @@
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
   window.OneSignal = window.OneSignal || [];
-  OneSignal.push(function() {
-    OneSignal.init({
+  OneSignal.push(async function() {
+    await OneSignal.init({
       appId: "000b8540-c342-4450-8ab0-797bbc3e7313",
       allowLocalhostAsSecure: true,
-      // Aponta diretamente para o Service Worker na sua subpasta
       serviceWorkerPath: "OneSignalSDKWorker.js",
       serviceWorkerParam: { scope: "/Sistema-sb/" },
       notifyButton: {
-        enable: false, // Mantém o botão nativo flutuante oculto
+        enable: false,
       },
     });
   });
