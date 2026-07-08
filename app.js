@@ -157,7 +157,7 @@ function renderPedidosDono() {
               </div>
               ${p.historicoAlteracao ? `<div class="alteracao-aviso-tag">✏️ ${p.historicoAlteracao}</div>` : ""}
             </div>
-            <div class="actions" style="margin:0;">
+            <div class="actions" style="margin:0; display: flex; gap: 8px;">
               <button class="btn btn-ghost btn-editar" data-id="${p.id}">✏️ Editar</button>
               <button class="btn btn-danger btn-excluir-pedido" data-id="${p.id}" style="padding: 8px 12px; font-size: 13px;">🗑️ Excluir</button>
             </div>
@@ -175,16 +175,21 @@ function renderPedidosDono() {
   if ($("statPendentesDono")) $("statPendentesDono").textContent = pendentes;
   if ($("statSeparadosDono")) $("statSeparadosDono").textContent = separados;
 
+  // 💡 CORREÇÃO AQUI: Garante o clique correto mesmo em cima do emoji
   document.querySelectorAll(".btn-editar").forEach(btn => {
     btn.addEventListener("click", (e) => {
-      ativarModoEdicao(e.target.getAttribute("data-id"));
+      const targetBtn = e.target.closest(".btn-editar");
+      if (targetBtn) {
+        ativarModoEdicao(targetBtn.getAttribute("data-id"));
+      }
     });
   });
 
   document.querySelectorAll(".btn-excluir-pedido").forEach(btn => {
     btn.addEventListener("click", async (e) => {
-      if (confirm("Deseja mesmo excluir definitivamente este pedido?")) {
-        await deleteDoc(doc(db, "pedidos", e.target.getAttribute("data-id")));
+      const targetBtn = e.target.closest(".btn-excluir-pedido");
+      if (targetBtn && confirm("Deseja mesmo excluir definitivamente este pedido?")) {
+        await deleteDoc(doc(db, "pedidos", targetBtn.getAttribute("data-id")));
       }
     });
   });
@@ -294,8 +299,9 @@ function renderPedidosExp() {
 
   document.querySelectorAll(".btn-excluir-exp").forEach(btn => {
     btn.addEventListener("click", async (e) => {
-      if (confirm("A expedição deseja remover/excluir este pedido concluído da lista?")) {
-        await deleteDoc(doc(db, "pedidos", e.target.getAttribute("data-id")));
+      const targetBtn = e.target.closest(".btn-excluir-exp");
+      if (targetBtn && confirm("A expedição deseja remover/excluir este pedido concluído da lista?")) {
+        await deleteDoc(doc(db, "pedidos", targetBtn.getAttribute("data-id")));
       }
     });
   });
@@ -371,6 +377,16 @@ function renderPedidoComposer() {
       renderPedidoComposer();
     });
   });
+}
+
+function activarModoEdicao(id) {
+  // Troca para minúscula na declaração interna por segurança global
+  ativarModoEdicao(id);
+}
+
+function activarModoEdicao(id) {
+  // Alias compatível
+  ativarModoEdicao(id);
 }
 
 function ativarModoEdicao(id) {
