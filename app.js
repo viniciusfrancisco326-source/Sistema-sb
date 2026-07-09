@@ -10,9 +10,7 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// ==========================================
-// CREDENCIAIS DO SEU FIREBASE
-// ==========================================
+// CREDENCIAIS EXTRAÍDAS DO SEU PROJETO ORIGINAL
 const firebaseConfig = {
   apiKey: "AIzaSyCowmhL0Iy3R-dkyLy2uJG-HyHYbnQV3cY",
   authDomain: "sistema-sb-expedicao.firebaseapp.com",
@@ -28,23 +26,21 @@ const pedidosRef = collection(db, "pedidos");
 
 const SESSION_KEY = "sistema_sou_bela_sessao_v13";
 const ONESIGNAL_APP_ID = "000b8540-c342-4450-8ab0-797bbc3e7313"; 
-const ONESIGNAL_REST_KEY = "grrf5hsueuanuuuscnyrmaisd"; // Sua chave REST API atualizada
+const ONESIGNAL_REST_KEY = "grrf5hsueuanuuuscnyrmaisd"; 
 
 let session = null;
 let databasePedidos = new Map();
 let composerBlocks = [{ modeloCodigo: "001", descricao: "" }];
 
-// Utility helper para ID de elementos HTML
 function $(id) { return document.getElementById(id); }
 
 // ==========================================
-// FUNÇÕES DE NOTIFICAÇÃO PUSH (ONESIGNAL V16)
+// PROGRAMAÇÃO DAS NOTIFICAÇÕES (ONESIGNAL V16)
 // ==========================================
 
 async function vincularUsuarioOneSignal() {
   if (!session) return;
   try {
-    // Na v16 chamamos as APIs de User diretamente, sem usar o push antigo
     if (session.perfil === "dono") {
       await OneSignal.User.addTag("identificador", `dono_${session.nome}`);
       console.log(`[OneSignal] Tag configurada: identificador = dono_${session.nome}`);
@@ -59,40 +55,35 @@ async function vincularUsuarioOneSignal() {
 
 async function ativarNotificacoes() {
   try {
-    console.log("[OneSignal] Chamando interface de inscrição...");
-    
-    // Valida suporte a push no navegador
+    console.log("[OneSignal] Verificando permissões...");
     if (!window.OneSignal || !OneSignal.Notifications.isPushSupported()) {
       alert("Este navegador não possui suporte a Notificações Push.");
       return;
     }
 
-    // 1. Verifica se já está permitido
     if (OneSignal.Notifications.permission === "granted") {
       await vincularUsuarioOneSignal();
       alert("✅ Tudo certo! As notificações já estão ativadas para este aparelho.");
       return;
     }
 
-    // 2. Verifica se o usuário bloqueou antes
     if (OneSignal.Notifications.permission === "denied") {
-      alert("❌ As notificações estão bloqueadas! Clique no ícone de cadeado ao lado do link do site, mude 'Notificações' para 'Permitir' e recarregue a página.");
+      alert("❌ Notificações bloqueadas! Clique no cadeado perto da URL do site, mude para 'Permitir' e recarregue a página.");
       return;
     }
 
-    // 3. Se for a primeira vez, abre a janela de prompt do OneSignal
     await OneSignal.Slidedown.promptPush();
     await vincularUsuarioOneSignal();
     
   } catch (e) {
     console.error("[OneSignal SDK Error]", e);
-    alert("Não foi possível processar a ativação. Atualize a página e tente novamente.");
+    alert("Erro ao ativar as notificações. Tente atualizar a página.");
   }
 }
 
 async function enviarPushOneSignal(chaveTag, valorTag, titulo, mensagem) {
   try {
-    console.log(`[Push] Tentando enviar notificação para tag ${chaveTag} = ${valorTag}`);
+    console.log(`[Push] Enviando notificação para a tag: ${chaveTag} = ${valorTag}`);
 
     const urlProxy = "https://cors-anywhere.herokuapp.com/";
     const urlOneSignal = "https://onesignal.com/api/v1/notifications";
@@ -108,7 +99,7 @@ async function enviarPushOneSignal(chaveTag, valorTag, titulo, mensagem) {
 
     let response;
     try {
-      // Tenta enviar direto
+      // Tentativa direta
       response = await fetch(urlOneSignal, {
         method: "POST",
         headers: {
@@ -118,8 +109,8 @@ async function enviarPushOneSignal(chaveTag, valorTag, titulo, mensagem) {
         body: JSON.stringify(payload)
       });
     } catch (corsError) {
-      // Se der erro de CORS, usa o Proxy intermediário automaticamente
-      console.warn("[Push] Bloqueio de CORS detectado. Tentando enviar via Proxy...");
+      // Correção automática de CORS usando Proxy seguro caso o navegador bloqueie
+      console.warn("[Push] Bloqueio de CORS ativo. Contornando via Proxy...");
       response = await fetch(urlProxy + urlOneSignal, {
         method: "POST",
         headers: {
@@ -137,7 +128,7 @@ async function enviarPushOneSignal(chaveTag, valorTag, titulo, mensagem) {
     if (resultado.errors) {
       console.error("[Push Erro do OneSignal]", resultado.errors);
     } else {
-      console.log("✅ Notificação enviada de ponta a ponta!");
+      console.log("✅ Notificação enviada com sucesso para o OneSignal!");
     }
 
   } catch (error) {
@@ -146,12 +137,12 @@ async function enviarPushOneSignal(chaveTag, valorTag, titulo, mensagem) {
 }
 
 // ==========================================
-// FUNÇÕES DO CORE DO SISTEMA (LOGIN, DOM, DATA)
+// SISTEMA CORE (DOM, LOGIN E TRATAMENTO DE DADOS)
 // ==========================================
 
 function getLocalDateTime() {
   const now = new Date();
-  const offset = -3; // UTC-3 (Horário de Brasília)
+  const offset = -3; // UTC-3 (Brasília)
   const localTime = new Date(now.getTime() + offset * 60 * 60 * 1000);
   
   const dateStr = localTime.toISOString().split('T')[0].split('-').reverse().join('/');
@@ -189,15 +180,10 @@ function showDashboard() {
     renderPedidosExp();
   }
   
-  // Sincroniza a tag do OneSignal em background caso já tenha dado permissão
   if (window.OneSignal && OneSignal.Notifications.permission === "granted") {
     vincularUsuarioOneSignal();
   }
 }
-
-// ==========================================
-// COMPOSER DE PEDIDOS (MÚLTIPLOS MODELOS)
-// ==========================================
 
 function renderPedidoComposer() {
   const container = $("pedidoComposerBlocks");
@@ -229,7 +215,6 @@ function renderPedidoComposer() {
     container.appendChild(row);
   });
 
-  // Listeners dos inputs do composer
   document.querySelectorAll(".select-modelo").forEach(el => {
     el.addEventListener("change", (e) => {
       const idx = parseInt(e.target.getAttribute("data-index"));
@@ -252,10 +237,6 @@ function renderPedidoComposer() {
     });
   });
 }
-
-// ==========================================
-// RENDERIZAÇÃO E INTERAÇÃO COM FIREBASE
-// ==========================================
 
 function renderPedidosDono() {
   if (!session) return;
@@ -321,7 +302,6 @@ function renderPedidosExp() {
     })
     .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
-  // Atualiza mini estatísticas
   let total = 0, pendentes = 0, concluidos = 0;
   databasePedidos.forEach(p => {
     total++;
@@ -380,7 +360,6 @@ function renderPedidosExp() {
     container.appendChild(card);
   });
 
-  // Eventos de alteração de status na expedição
   document.querySelectorAll(".select-status-update").forEach(el => {
     el.addEventListener("change", async (e) => {
       const id = e.target.getAttribute("data-id");
@@ -401,13 +380,11 @@ function renderPedidosExp() {
             updatedDate: localDateTime.date, updatedTime: localDateTime.time
           });
 
-          // Pega os dados do pedido para saber quem é o dono/vendedor
           const pedidoInfo = databasePedidos.get(id);
           if (pedidoInfo) {
             let msgStatus = `O status do seu pedido mudou para: ${novoStatus.toUpperCase().replace("-", " ")}`;
             if (novoStatus === "separado") msgStatus = `🎉 Seu pedido de ${pedidoInfo.cliente} está SEPARADO e pronto!`;
             
-            // Dispara a Notificação de volta para o Dono que criou o pedido
             await enviarPushOneSignal("identificador", `dono_${pedidoInfo.vendedor}`, "🔄 Status do Pedido Atualizado", msgStatus);
           }
         }
@@ -428,7 +405,6 @@ function renderPedidosExp() {
         
         const pedidoInfo = databasePedidos.get(id);
         if (pedidoInfo) {
-          // Alerta o dono especificando a falta de mercadoria
           await enviarPushOneSignal("identificador", `dono_${pedidoInfo.vendedor}`, "⚠️ Falta de Peça no Pedido", `Falta no pedido de ${pedidoInfo.cliente}: ${motivo}`);
         }
         alert("Motivo de falta salvo e notificado ao vendedor!");
@@ -438,7 +414,7 @@ function renderPedidosExp() {
 
   document.querySelectorAll(".btn-delete-pedido").forEach(el => {
     el.addEventListener("click", async (e) => {
-      if (confirm("Deseja realmente apagar este pedido do histórico do banco de dados?")) {
+      if (confirm("Deseja realmente apagar este pedido do histórico?")) {
         const id = e.target.getAttribute("data-id");
         try { await deleteDoc(doc(db, "pedidos", id)); } catch (err) { console.error(err); }
       }
@@ -447,7 +423,7 @@ function renderPedidosExp() {
 }
 
 // ==========================================
-// BIND DE EVENTOS GERAIS DA INTERFACE
+// BIND DE EVENTOS DA INTERFACE
 // ==========================================
 
 if (typeof window !== "undefined") {
@@ -491,15 +467,14 @@ if (typeof window !== "undefined") {
 
       const cliente = $("cliente").value.trim();
       const estado = $("estado").value;
-      const cidade = $("cidade").value.trim();
+      const city = $("cidade").value.trim();
       const obs = $("obsPedido").value.trim();
 
-      if (!cliente || !cidade) {
+      if (!cliente || !city) {
         alert("Preencha o Nome do Cliente e a Cidade.");
         return;
       }
 
-      // Valida se preencheu pelo menos um bloco de descrição
       const possuiDescricao = composerBlocks.some(b => b.descricao.trim() !== "");
       if (!possuiDescricao) {
         alert("Preencha a descrição de tamanhos/cores de pelo menos um modelo.");
@@ -509,11 +484,11 @@ if (typeof window !== "undefined") {
       const localDateTime = getLocalDateTime();
 
       try {
-        const docRef = await addDoc(pedidosRef, {
+        await addDoc(pedidosRef, {
           vendedor: session.nome,
           cliente,
           estado,
-          cidade,
+          cidade: city,
           obs,
           status: "nao-visualizado",
           motivoFalta: "",
@@ -525,7 +500,7 @@ if (typeof window !== "undefined") {
           updatedTime: localDateTime.time
         });
 
-        // Dispara Notificação Real para a expedição informando o novo pedido
+        // DISPARO SEGURO DE NOTIFICAÇÃO REAL PARA A EXPEDIÇÃO
         await enviarPushOneSignal("identificador", "expedicao", "📦 Novo pedido recebido!", `De ${session.nome} para ${cliente}.`);
         
         $("cliente").value = ""; $("estado").value = "CE"; $("cidade").value = ""; $("obsPedido").value = "";
@@ -544,14 +519,12 @@ if (typeof window !== "undefined") {
     $("searchExp").addEventListener("input", renderPedidosExp);
     $("filterStatus").addEventListener("change", renderPedidosExp);
     
-    // Vincula cliques de ativar notificações aos botões do HTML
     $("btnAtivarNotificacoesLogin").addEventListener("click", ativarNotificacoes);
     $("btnAtivarNotificacoesDono").addEventListener("click", ativarNotificacoes);
     $("btnAtivarNotificacoesExp").addEventListener("click", ativarNotificacoes);
   });
 }
 
-// Ouvinte em tempo real do banco de dados Firebase
 onSnapshot(pedidosRef, (snapshot) => {
   const next = new Map();
   snapshot.forEach(d => next.set(d.id, { id: d.id, ...d.data() }));
