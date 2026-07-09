@@ -30,7 +30,7 @@ const SESSION_KEY = "sistema_sou_bela_sessao_v15";
 // ==========================================
 // CREDENCIAIS OFICIAIS DO ONESIGNAL
 // ==========================================
-const ONESIGNAL_APP_ID = "000b8540-c342-4450-8ab0-797bbc3e7313"; 
+const ONESIGNAL_APP_ID = "000b8540-c342-4950-8ab0-797bbc3e7313"; 
 const ONESIGNAL_REST_API_KEY = "grrf5hsueuanuuuscnyrmaisd"; 
 
 let session = null;
