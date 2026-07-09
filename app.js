@@ -92,32 +92,12 @@ async function ativarNotificacoes() {
   }
 }
 
-// FUNÇÃO ATUALIZADA: Envia o push autenticado com a sua REST API Key
+
+// FUNÇÃO ATUALIZADA: Agora o Make.com cuida do envio monitorando o Firebase
 async function enviarPushOneSignal(chaveTag, valorTag, titulo, message) {
-  if (oneSignalSubmitedError) return;
-  try {
-    const urlOneSignal = "https://onesignal.com/api/v1/notifications";
-    const payload = {
-      app_id: ONESIGNAL_APP_ID,
-      headings: { "en": titulo, "pt": titulo },
-      contents: { "en": message, "pt": message },
-      filters: [{ "field": "tag", "key": chaveTag, "relation": "=", "value": valorTag }]
-    };
-    
-    const resposta = await fetch(urlOneSignal, {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": `Basic ${ONESIGNAL_REST_API_KEY}`
-      },
-      body: JSON.stringify(payload)
-    });
-    
-    const resultado = await resposta.json();
-    console.log("👉 Retorno do Envio OneSignal:", resultado);
-  } catch (error) { 
-    console.error("❌ Erro fatal ao tentar enviar push:", error); 
-  }
+  // O Make.com agora detecta as mudanças no banco e envia o push automaticamente.
+  // Deixamos esta função vazia para evitar erros de CORS no navegador.
+  console.log(`📡 [Automação] O Firebase foi atualizado. O Make.com enviará o push: "${titulo}" -> ${message}`);
 }
 
 // ==========================================
