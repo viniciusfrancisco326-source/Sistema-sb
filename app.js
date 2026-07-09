@@ -23,97 +23,73 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const pedidosRef = collection(db, "pedidos");
 
-const SESSION_KEY = "sistema_sou_bela_sessao_v13";
+const SESSION_KEY = "sistema_sou_bela_sessao_v15"; 
 const ONESIGNAL_APP_ID = "000b8540-c342-4450-8ab0-797bbc3e7313"; 
-const ONESIGNAL_REST_KEY = "grrf5hsueuanuuuscnyrmaisd"; 
 
 let session = null;
 let databasePedidos = new Map();
-let composerBlocks = [{ modeloCodigo: "", descricao: "" }]; // Inicializa vazio para digitação livre
+let composerBlocks = [{ modeloCodigo: "", descricao: "" }];
 
 function $(id) { return document.getElementById(id); }
 
-// ==========================================
-// NOTIFICAÇÕES CORRIGIDAS (ONESIGNAL V16)
-// ==========================================
+// INITIALIZATION COM PROTEÇÃO CONTRA TRAVAMENTOS DE CACHE
+if (typeof window !== "undefined") {
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  window.OneSignalDeferred.push(async function(OneSignal) {
+    try {
+      await OneSignal.init({
+        appId: ONESIGNAL_APP_ID,
+        allowLocalhostAsSecure: true,
+        serviceWorkerPath: "OneSignalSDKWorker.js",
+        serviceWorkerParam: { scope: "/Sistema-sb/" },
+      });
+    } catch(err) {
+      console.log("[OneSignal Bypassed] O erro de AppID foi isolado para evitar travar os botões.", err);
+    }
+  });
+}
 
 async function vincularUsuarioOneSignal() {
   if (!session) return;
   try {
-    if (typeof OneSignal !== "undefined") {
+    if (typeof OneSignal !== "undefined" && OneSignal.User) {
       if (session.perfil === "dono") {
         await OneSignal.User.addTag("identificador", `dono_${session.nome}`);
-        console.log(`[OneSignal] Tag configurada: dono_${session.nome}`);
       } else {
         await OneSignal.User.addTag("identificador", "expedicao");
-        console.log(`[OneSignal] Tag configurada: expedicao`);
       }
     }
-  } catch (e) { console.error("[OneSignal Tag Error]", e); }
+  } catch (e) { console.error(e); }
 }
 
 async function ativarNotificacoes() {
   try {
     if (typeof OneSignal === "undefined") {
-      alert("Aguarde o carregamento do sistema de notificações e tente novamente.");
+      alert("O sistema de notificações ainda está carregando. Tente novamente em alguns segundos.");
       return;
     }
-    
-    // Força checagem limpa de permissão para evitar o travamento de AppID incorreto do cache
-    if (OneSignal.Notifications.permission === "granted") {
-      await vincularUsuarioOneSignal();
-      alert("✅ Tudo certo! As notificações já estão ativadas para este aparelho.");
-      return;
-    }
-
     await OneSignal.Slidedown.promptPush();
     await vincularUsuarioOneSignal();
-  } catch (e) {
-    console.error("[OneSignal SDK Error]", e);
-  }
+    alert("Pedido de ativação enviado!");
+  } catch (e) { console.error(e); }
 }
 
 async function enviarPushOneSignal(chaveTag, valorTag, titulo, message) {
   try {
-    const urlProxy = "https://cors-anywhere.herokuapp.com/";
     const urlOneSignal = "https://onesignal.com/api/v1/notifications";
-
     const payload = {
       app_id: ONESIGNAL_APP_ID,
       headings: { "en": titulo, "pt": titulo },
       contents: { "en": message, "pt": message },
       filters: [{ "field": "tag", "key": chaveTag, "relation": "=", "value": valorTag }]
     };
-
-    let response;
-    try {
-      response = await fetch(urlOneSignal, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json; charset=utf-8",
-          "Authorization": `Basic ${ONESIGNAL_REST_KEY}`
-        },
-        body: JSON.stringify(payload)
-      });
-    } catch (corsError) {
-      response = await fetch(urlProxy + urlOneSignal, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json; charset=utf-8",
-          "Authorization": `Basic ${ONESIGNAL_REST_KEY}`,
-          "X-Requested-With": "XMLHttpRequest"
-        },
-        body: JSON.stringify(payload)
-      });
-    }
-    const resultado = await response.json();
-    console.log("[OneSignal API Response]", resultado);
-  } catch (error) { console.error("[Push Exception]", error); }
+    fetch(urlOneSignal, {
+      method: "POST",
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+      body: JSON.stringify(payload)
+    }).catch(() => {});
+  } catch (error) { console.error(error); }
 }
-
-// ==========================================
-// CORE DO SISTEMA (CONVERSÃO DE DADOS NATAL DO FIREBASE)
-// ==========================================
 
 function getLocalDateTime() {
   const now = new Date();
@@ -153,9 +129,6 @@ function showDashboard() {
     $("dashboardExpedicao").style.display = "block";
     renderPedidosExp();
   }
-  if (typeof OneSignal !== "undefined" && OneSignal.Notifications.permission === "granted") {
-    vincularUsuarioOneSignal();
-  }
 }
 
 function mudarCamposPerfil() {
@@ -163,7 +136,6 @@ function mudarCamposPerfil() {
   $("boxSelecionarNome").style.display = (perfil === "dono") ? "block" : "none";
 }
 
-// FORMATO COM CAMPO EM BRANCO PARA DIGITAÇÃO LIVRE DO MODELO
 function renderPedidoComposer() {
   const container = $("pedidoComposerBlocks");
   container.innerHTML = "";
@@ -172,10 +144,10 @@ function renderPedidoComposer() {
     row.className = "composer-row";
     row.innerHTML = `
       <div class="field" style="width: 160px;">
-        <input type="text" class="input-modelo" placeholder="Modelo (Ex: 001)" value="${block.modeloCodigo}" data-index="${index}">
+        <input type="text" class="input-modelo" placeholder="Modelo (Ex: 001)" value="${block.modeloCodigo || ''}" data-index="${index}">
       </div>
       <div class="field flex-1">
-        <input type="text" class="input-desc" placeholder="Ex: 5 P, 10 M, 5 G cor azul" value="${block.descricao}" data-index="${index}">
+        <input type="text" class="input-desc" placeholder="Ex: 5 P, 10 M, 5 G cor azul" value="${block.descricao || ''}" data-index="${index}">
       </div>
       ${composerBlocks.length > 1 ? `<button type="button" class="btn-remove-row" data-index="${index}">✕</button>` : ""}
     `;
@@ -205,21 +177,21 @@ function renderPedidoComposer() {
   });
 }
 
-// CORRIGIDO: MONTA AS PEÇAS NO COMPORTAMENTO NATIVO DO HISTÓRICO DO FIREBASE
 function extrairDetalhesDoPedido(p) {
   let HTML = "";
-  if (Array.isArray(p.itens)) {
+  if (Array.isArray(p.itens) && p.itens.length > 0) {
     p.itens.forEach(it => {
       if(it.modeloCodigo || it.descricao) {
-        HTML += `<div class="item-badge"><strong>${it.modeloCodigo || 'Modelo'}:</strong> ${it.descricao || ''}</div>`;
+        HTML += `<div class="item-badge" style="background:#fff; border:1px solid #e5e7eb; padding:6px; border-radius:8px; margin-bottom:4px; font-size:13px;"><strong>Mod. ${it.modeloCodigo || 'Não informado'}:</strong> ${it.descricao || ''}</div>`;
       }
     });
   } else if (p.modeloCodigo || p.descricao) {
-    HTML += `<div class="item-badge"><strong>${p.modeloCodigo || 'Modelo'}:</strong> ${p.descricao || ''}</div>`;
+    HTML += `<div class="item-badge" style="background:#fff; border:1px solid #e5e7eb; padding:6px; border-radius:8px; margin-bottom:4px; font-size:13px;"><strong>Mod. ${p.modeloCodigo || 'Não informado'}:</strong> ${p.descricao || ''}</div>`;
   }
-  return HTML || `<div class="item-badge" style="color:red;">Sem detalhes cadastrados</div>`;
+  return HTML || `<div class="item-badge" style="color:#ef4444; font-weight:bold;">⚠️ Nenhum detalhe de peça registrado.</div>`;
 }
 
+// INCLUSÃO DOS BOTÕES DE EDITAR E EXCLUIR NO HISTÓRICO DO DONO
 function renderPedidosDono() {
   if (!session) return;
   const container = $("listaPedidosDono");
@@ -236,23 +208,73 @@ function renderPedidosDono() {
   lista.forEach(p => {
     const card = document.createElement("div");
     card.className = `pedido-card status-${p.status}`;
+    const statusLimpo = p.status ? p.status.replace("-", " ") : "nao visualizado";
+
+    let editadoTagHtml = p.editadoPor 
+      ? `<div class="editado-aviso-box">✏️ Editado por ${p.editadoPor} em ${p.editadoDate} às ${p.editadoTime}</div>` 
+      : "";
+
     card.innerHTML = `
-      <div class="pedido-header">
+      <div class="pedido-header" style="display:flex; justify-content:space-between; align-items:center;">
         <span class="pedido-id">#${p.id.substring(0,6).toUpperCase()}</span>
-        <span class="status-indicator">${p.status.toUpperCase().replace("-", " ")}</span>
+        <span class="status-indicator-badge badge-${p.status}">${statusLimpo}</span>
       </div>
-      <div class="pedido-body">
+      <div class="pedido-body" style="margin-top:10px;">
         <p><strong>Cliente:</strong> ${p.cliente}</p>
         <p><strong>Destino:</strong> ${p.cidade} - ${p.estado}</p>
-        <div class="pedido-itens-list">${extrairDetalhesDoPedido(p)}</div>
-        ${p.obs ? `<p class="obs-text"><strong>Obs:</strong> ${p.obs}</p>` : ""}
-        ${p.motivoFalta ? `<div class="alteracao-aviso-box">⚠️ <strong>Falta:</strong> ${p.motivoFalta}</div>` : ""}
+        <div class="pedido-itens-list" style="background: rgba(255,255,255,0.5); padding:8px; border-radius:8px; margin-top:8px;">
+          ${extrairDetalhesDoPedido(p)}
+        </div>
+        ${p.obs ? `<p class="obs-text" style="margin-top:8px;"><strong>Obs Geral:</strong> ${p.obs}</p>` : ""}
+        ${p.motivoFalta ? `<div class="alteracao-aviso-box" style="background:#fff7ed; border-left:4px solid #f97316; padding:8px; margin-top:8px; border-radius:4px;">⚠️ <strong>Falta comunicada:</strong> ${p.motivoFalta}</div>` : ""}
+        ${editadoTagHtml}
       </div>
-      <div class="pedido-footer">
-        <span>Enviado em: ${p.createdDate} às ${p.createdTime}</span>
+      <div class="pedido-footer" style="margin-top:10px; display:flex; justify-content:space-between; align-items:center; font-size:11px;">
+        <span style="color:#667085;">Enviado: ${p.createdDate || ''} às ${p.createdTime || ''}</span>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-edit-dono" data-id="${p.id}" style="background:none; border:none; color:var(--info); cursor:pointer; font-weight:700;">Editar</button>
+          <button class="btn-delete-dono" data-id="${p.id}" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:700;">Excluir</button>
+        </div>
       </div>
     `;
     container.appendChild(card);
+  });
+
+  // GATILHO DO BOTÃO EDITAR DO DONO
+  document.querySelectorAll(".btn-edit-dono").forEach(el => {
+    el.addEventListener("click", (e) => {
+      const id = e.target.getAttribute("data-id");
+      const p = databasePedidos.get(id);
+      if (!p) return;
+
+      $("editPedidoId").value = p.id;
+      $("cliente").value = p.cliente || "";
+      $("estado").value = p.estado || "CE";
+      $("cidade").value = p.cidade || "";
+      $("obsPedido").value = p.obs || "";
+
+      if (Array.isArray(p.itens) && p.itens.length > 0) {
+        composerBlocks = JSON.parse(JSON.stringify(p.itens));
+      } else {
+        composerBlocks = [{ modeloCodigo: p.modeloCodigo || "", descricao: p.descricao || "" }];
+      }
+
+      renderPedidoComposer();
+      $("tituloFormPedido").innerText = `✏️ Editando Pedido #${p.id.substring(0,6).toUpperCase()}`;
+      $("btnSubmitPedido").innerText = "Salvar Alterações";
+      $("btnCancelarEdicao").style.display = "inline-block";
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  // GATILHO DO BOTÃO EXCLUIR DO DONO
+  document.querySelectorAll(".btn-delete-dono").forEach(el => {
+    el.addEventListener("click", async (e) => {
+      const id = e.target.getAttribute("data-id");
+      if (confirm("Você tem certeza de que deseja excluir este pedido permanente do histórico?")) {
+        try { await deleteDoc(doc(db, "pedidos", id)); } catch(err) { console.error(err); }
+      }
+    });
   });
 }
 
@@ -265,10 +287,10 @@ function renderPedidosExp() {
 
   const lista = Array.from(databasePedidos.values())
     .filter(p => {
-      const matchSearch = p.cliente.toLowerCase().includes(search) || 
-                          p.vendedor.toLowerCase().includes(search) ||
-                          p.cidade.toLowerCase().includes(search) ||
-                          p.id.toLowerCase().includes(search);
+      const matchSearch = (p.cliente || "").toLowerCase().includes(search) || 
+                          (p.vendedor || "").toLowerCase().includes(search) ||
+                          (p.cidade || "").toLowerCase().includes(search) ||
+                          (p.id || "").toLowerCase().includes(search);
       const matchFilter = filter === "all" || p.status === filter;
       return matchSearch && matchFilter;
     })
@@ -293,16 +315,19 @@ function renderPedidosExp() {
     const card = document.createElement("div");
     card.className = `pedido-card status-${p.status}`;
     
-    // REGRA SOLICITADA: O botão de excluir só aparece se o status for "separado"
     const botaoExcluirHtml = (p.status === "separado") 
       ? `<button class="btn-delete-pedido" data-id="${p.id}" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:700;">Excluir</button>`
-      : `<span style="font-size:11px; color:var(--muted);">Exclusão Bloqueada (Não Separado)</span>`;
+      : `<span style="font-size:11px; color:#9ca3af;">Exclusão Bloqueada</span>`;
+
+    let editadoTagHtml = p.editadoPor 
+      ? `<div class="editado-aviso-box">✏️ Editado por ${p.editadoPor} em ${p.editadoDate} às ${p.editadoTime}</div>` 
+      : "";
 
     card.innerHTML = `
-      <div class="pedido-header">
-        <span class="pedido-id">#${p.id.substring(0,6).toUpperCase()} (${p.vendedor})</span>
+      <div class="pedido-header" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+        <span class="pedido-id" style="font-weight:bold;">#${p.id.substring(0,6).toUpperCase()} (${p.vendedor || 'Sem Nome'})</span>
         <div class="field" style="margin:0;">
-          <select class="select-status-update" data-id="${p.id}">
+          <select class="select-status-update" data-id="${p.id}" style="padding:4px; font-size:12px; border-radius:6px;">
             <option value="nao-visualizado" ${p.status === "nao-visualizado" ? "selected" : ""}>Não visualizado</option>
             <option value="visualizado" ${p.status === "visualizado" ? "selected" : ""}>Visualizado</option>
             <option value="em-separacao" ${p.status === "em-separacao" ? "selected" : ""}>Em separação</option>
@@ -311,18 +336,21 @@ function renderPedidosExp() {
           </select>
         </div>
       </div>
-      <div class="pedido-body">
-        <p><strong>Cliente:</strong> ${p.cliente}</p>
-        <p><strong>Destino:</strong> ${p.cidade} - ${p.estado}</p>
-        <div class="pedido-itens-list">${extrairDetalhesDoPedido(p)}</div>
-        ${p.obs ? `<p class="obs-text"><strong>Obs:</strong> ${p.obs}</p>` : ""}
+      <div class="pedido-body" style="margin-top:10px;">
+        <p><strong>Cliente:</strong> ${p.cliente || ''}</p>
+        <p><strong>Destino:</strong> ${p.cidade || ''} - ${p.estado || ''}</p>
+        <div class="pedido-itens-list" style="background: rgba(255,255,255,0.5); padding:8px; border-radius:8px; margin-top:8px;">
+          ${extrairDetalhesDoPedido(p)}
+        </div>
+        ${p.obs ? `<p class="obs-text" style="margin-top:8px;"><strong>Obs:</strong> ${p.obs}</p>` : ""}
+        ${editadoTagHtml}
         <div class="falta-peca-box" id="boxFalta_${p.id}" style="display: ${p.status === "falta-peca" ? "block" : "none"}; margin-top: 10px;">
-          <input type="text" id="inputFalta_${p.id}" placeholder="Itens faltando..." value="${p.motivoFalta || ""}" style="padding: 8px; border-radius: 8px; border: 1px solid var(--line); width: 80%; font-size:13px;">
-          <button class="btn-salvar-falta" data-id="${p.id}" style="padding: 8px 12px; background: var(--warning); color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:700;">Salvar</button>
+          <input type="text" id="inputFalta_${p.id}" placeholder="Descreva o que falta..." value="${p.motivoFalta || ""}" style="padding: 6px; border-radius: 6px; border: 1px solid var(--line); width: 70%; font-size:12px;">
+          <button class="btn-salvar-falta" data-id="${p.id}" style="padding: 6px 10px; background: var(--warning); color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:700; font-size:12px;">Salvar</button>
         </div>
       </div>
-      <div class="pedido-footer">
-        <span>Recebido em: ${p.createdDate} às ${p.createdTime}</span>
+      <div class="pedido-footer" style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:11px; color:#667085;">
+        <span>Recebido: ${p.createdDate || ''} às ${p.createdTime || ''}</span>
         ${botaoExcluirHtml}
       </div>
     `;
@@ -339,13 +367,13 @@ function renderPedidosExp() {
           $(`boxFalta_${id}`).style.display = "block";
           await updateDoc(doc(db, "pedidos", id), { status: novoStatus, updatedDate: localDateTime.date, updatedTime: localDateTime.time });
         } else {
-          $(`boxFalta_${id}`).style.display = "none";
+          if ($(`boxFalta_${id}`)) $(`boxFalta_${id}`).style.display = "none";
           await updateDoc(doc(db, "pedidos", id), { status: novoStatus, motivoFalta: "", updatedDate: localDateTime.date, updatedTime: localDateTime.time });
           const pedidoInfo = databasePedidos.get(id);
           if (pedidoInfo) {
             let msgStatus = `O status do seu pedido mudou para: ${novoStatus.toUpperCase().replace("-", " ")}`;
             if (novoStatus === "separado") msgStatus = `🎉 Seu pedido de ${pedidoInfo.cliente} está SEPARADO e pronto!`;
-            await enviarPushOneSignal("identificador", `dono_${pedidoInfo.vendedor}`, "🔄 Status do Pedido Atualizado", msgStatus);
+            await enviarPushOneSignal("identificador", `dono_${pedidoInfo.vendedor}`, "🔄 Status Atualizado", msgStatus);
           }
         }
       } catch (err) { console.error(err); }
@@ -361,9 +389,9 @@ function renderPedidosExp() {
         await updateDoc(doc(db, "pedidos", id), { motivoFalta: motivo, updatedDate: localDateTime.date, updatedTime: localDateTime.time });
         const pedidoInfo = databasePedidos.get(id);
         if (pedidoInfo) {
-          await enviarPushOneSignal("identificador", `dono_${pedidoInfo.vendedor}`, "⚠️ Falta de Peça no Pedido", `Falta no pedido de ${pedidoInfo.cliente}: ${motivo}`);
+          await enviarPushOneSignal("identificador", `dono_${pedidoInfo.vendedor}`, "⚠️ Falta de Peça", `Falta no pedido de ${pedidoInfo.cliente}: ${motivo}`);
         }
-        alert("Motivo de falta salvo e notificado!");
+        alert("Motivo salvo!");
       } catch (err) { console.error(err); }
     });
   });
@@ -373,19 +401,27 @@ function renderPedidosExp() {
       const id = e.target.getAttribute("data-id");
       const ped = databasePedidos.get(id);
       if (ped && ped.status !== "separado") {
-        alert("Ação negada! Apenas pedidos com status 'Separado' podem ser excluídos.");
+        alert("Ação recusada! Apenas pedidos já Separados podem ser excluídos.");
         return;
       }
-      if (confirm("Deseja apagar este pedido concluído?")) {
+      if (confirm("Deseja apagar permanentemente este pedido?")) {
         try { await deleteDoc(doc(db, "pedidos", id)); } catch (err) { console.error(err); }
       }
     });
   });
 }
 
-// ==========================================
-// EVENTOS E INTERAÇÃO
-// ==========================================
+function resetForm() {
+  $("editPedidoId").value = "";
+  $("cliente").value = "";
+  $("cidade").value = "";
+  $("obsPedido").value = "";
+  $("tituloFormPedido").innerText = "📦 Enviar Novo Pedido";
+  $("btnSubmitPedido").innerText = "Enviar para Expedição";
+  $("btnCancelarEdicao").style.display = "none";
+  composerBlocks = [{ modeloCodigo: "", descricao: "" }];
+  renderPedidoComposer();
+}
 
 if (typeof window !== "undefined") {
   window.addEventListener("DOMContentLoaded", () => {
@@ -399,6 +435,8 @@ if (typeof window !== "undefined") {
       renderPedidoComposer();
     });
 
+    $("btnCancelarEdicao").addEventListener("click", resetForm);
+
     $("btnEntrar").addEventListener("click", () => {
       const perfil = $("perfilLogin").value;
       const nome = (perfil === "dono") ? $("nomeVendedorSelect").value : "Expedição";
@@ -411,41 +449,82 @@ if (typeof window !== "undefined") {
     $("btnSairExp").addEventListener("click", logout);
 
     function logout() {
-      if (confirm("Deseja encerrar a sessão?")) {
+      if (confirm("Deseja fechar o sistema?")) {
         localStorage.removeItem(SESSION_KEY);
         session = null;
         showLogin();
       }
     }
 
+    // INTERAÇÃO COMPLETA DE CRIAÇÃO / EDIÇÃO DE PEDIDOS
     $("formNovoPedido").addEventListener("submit", async (e) => {
       e.preventDefault();
       if (!session) return;
+
+      const idExistente = $("editPedidoId").value;
       const cliente = $("cliente").value.trim();
       const estado = $("estado").value;
       const city = $("cidade").value.trim();
       const obs = $("obsPedido").value.trim();
 
       if (!cliente || !city) { alert("Preencha o Nome do Cliente e a Cidade."); return; }
-      if (!composerBlocks.some(b => b.descricao.trim() !== "")) { alert("Preencha as especificações de peças do pedido."); return; }
+      
+      const temPreenchido = composerBlocks.some(b => (b.modeloCodigo || "").trim() !== "" || (b.descricao || "").trim() !== "");
+      if (!temPreenchido) { alert("Informe pelo menos um modelo ou descrição de peça."); return; }
 
       const localDateTime = getLocalDateTime();
-      try {
-        await addDoc(pedidosRef, {
-          vendedor: session.nome, cliente, estado, cidade: city, obs,
-          status: "nao-visualizado", motivoFalta: "", itens: composerBlocks,
-          timestamp: serverTimestamp(), createdDate: localDateTime.date, createdTime: localDateTime.time,
-          updatedDate: localDateTime.date, updatedTime: localDateTime.time
-        });
-        await enviarPushOneSignal("identificador", "expedicao", "📦 Novo pedido recebido!", `De ${session.nome} para ${cliente}.`);
-        $("cliente").value = ""; $("cidade").value = ""; $("obsPedido").value = "";
-        composerBlocks = [{ modeloCodigo: "", descricao: "" }]; 
-        renderPedidoComposer();
-        alert("Pedido enviado com sucesso!");
-      } catch (err) { console.error(err); }
+      const primeiroBloco = composerBlocks[0] || { modeloCodigo: "", descricao: "" };
+
+      if (idExistente) {
+        // MODO EDIÇÃO
+        try {
+          const pedidoOriginal = databasePedidos.get(idExistente);
+          
+          // REGRA SOLICITADA: Se o status original for diferente de nao-visualizado, reseta para nao-visualizado
+          let novoStatus = "nao-visualizado";
+
+          await updateDoc(doc(db, "pedidos", idExistente), {
+            cliente,
+            estado,
+            cidade: city,
+            obs,
+            status: novoStatus,
+            modeloCodigo: primeiroBloco.modeloCodigo,
+            descricao: primeiroBloco.descricao,
+            itens: composerBlocks,
+            editadoPor: session.nome,
+            editadoDate: localDateTime.date,
+            editadoTime: localDateTime.time,
+            updatedDate: localDateTime.date,
+            updatedTime: localDateTime.time
+          });
+
+          await enviarPushOneSignal("identificador", "expedicao", "✏️ Pedido Alterado!", `O pedido de ${cliente} foi modificado por ${session.nome}.`);
+          resetForm();
+          alert("Pedido atualizado com sucesso e status retornado para Fila!");
+        } catch(err) { console.error(err); }
+
+      } else {
+        // MODO NOVO PEDIDO
+        try {
+          await addDoc(pedidosRef, {
+            vendedor: session.nome, cliente, estado, cidade: city, obs,
+            status: "nao-visualizado", motivoFalta: "", 
+            modeloCodigo: primeiroBloco.modeloCodigo,
+            descricao: primeiroBloco.descricao,
+            itens: composerBlocks,                   
+            timestamp: serverTimestamp(), 
+            createdDate: localDateTime.date, createdTime: localDateTime.time,
+            updatedDate: localDateTime.date, updatedTime: localDateTime.time
+          });
+          
+          await enviarPushOneSignal("identificador", "expedicao", "📦 Novo pedido!", `De ${session.nome} para ${cliente}.`);
+          resetForm();
+          alert("Pedido enviado com sucesso para a Expedição!");
+        } catch (err) { console.error(err); }
+      }
     });
 
-    // SOLICITADO: Preencher Exemplo agora traz por padrão o "001 - Reforçado Liso"
     $("btnExemplo").addEventListener("click", () => {
       $("cliente").value = "Loja Exemplo"; $("cidade").value = "Fortaleza";
       composerBlocks = [{ modeloCodigo: "001 - Reforçado Liso", descricao: "10 P preto, 10 M rosa" }]; 
