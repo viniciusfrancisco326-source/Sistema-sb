@@ -27,11 +27,13 @@ const db = getFirestore(app);
 const pedidosRef = collection(db, "pedidos");
 
 const SESSION_KEY = "sistema_sou_bela_sessao_v15"; 
-const ONESIGNAL_APP_ID = "000b8540-c342-4450-8ab0-797bbc3e7313"; 
+// ⚠️ COMPROVE ESTE ID NO PAINEL DO ONESIGNAL (WEB PUSH APP ID)
+const ONESIGNAL_APP_ID = "000b8540-c342-4950-8ab0-797bbc3e7313"; 
 
 let session = null;
 let databasePedidos = new Map();
 let composerBlocks = [{ modeloCodigo: "", descricao: "" }];
+let oneSignalSubmitedError = false;
 
 function $(id) { return document.getElementById(id); }
 
@@ -49,7 +51,8 @@ if (typeof window !== "undefined") {
         serviceWorkerParam: { scope: "/Sistema-sb/" },
       });
     } catch(err) {
-      console.log("[OneSignal Bypassed] Erro de cache isolado com sucesso para não travar o site.", err);
+      oneSignalSubmitedError = true;
+      console.log("[OneSignal Bypassed] Erro de cache ou AppID inválido isolado.", err);
     }
   });
 }
@@ -68,6 +71,10 @@ async function vincularUsuarioOneSignal() {
 }
 
 async function ativarNotificacoes() {
+  if (oneSignalSubmitedError) {
+    alert("⚠️ Não foi possível ativar. O OneSignal recusou o AppID configurado no código. Verifique se o ID está correto no painel do OneSignal.");
+    return;
+  }
   try {
     if (typeof OneSignal === "undefined") {
       alert("O sistema de notificações ainda está carregando. Tente novamente em alguns segundos.");
@@ -76,10 +83,14 @@ async function ativarNotificacoes() {
     await OneSignal.Slidedown.promptPush();
     await vincularUsuarioOneSignal();
     alert("Pedido de ativação enviado!");
-  } catch (e) { console.error(e); }
+  } catch (e) { 
+    console.error(e); 
+    alert("Erro ao abrir a solicitação de notificações.");
+  }
 }
 
 async function enviarPushOneSignal(chaveTag, valorTag, titulo, message) {
+  if (oneSignalSubmitedError) return;
   try {
     const urlOneSignal = "https://onesignal.com/api/v1/notifications";
     const payload = {
@@ -225,12 +236,13 @@ function renderPedidosDono() {
       ? `<div class="editado-aviso-box">✏️ Editado por ${p.editadoPor} em ${p.editadoDate} às ${p.editadoTime}</div>` 
       : "";
 
+    // ALTERADO DE 'pedido-body' PARA 'pedido-card-conteudo' PARA NÃO COMPACTAR NO CSS
     card.innerHTML = `
       <div class="pedido-header" style="display:flex; justify-content:space-between; align-items:center;">
         <span class="pedido-id">#${p.id.substring(0,6).toUpperCase()}</span>
         <span class="status-indicator-badge badge-${p.status}">${statusLimpo}</span>
       </div>
-      <div class="pedido-body" style="margin-top:10px;">
+      <div class="pedido-card-conteudo" style="margin-top:10px;">
         <p><strong>Cliente:</strong> ${p.cliente}</p>
         <p><strong>Destino:</strong> ${p.cidade} - ${p.estado}</p>
         <div class="pedido-itens-list" style="background: rgba(255,255,255,0.5); padding:8px; border-radius:8px; margin-top:8px;">
@@ -337,6 +349,7 @@ function renderPedidosExp() {
       ? `<div class="editado-aviso-box">✏️ Editado por ${p.editadoPor} em ${p.editadoDate} às ${p.editadoTime}</div>` 
       : "";
 
+    // ALTERADO DE 'pedido-body' PARA 'pedido-card-conteudo' PARA NÃO COMPACTAR NO CSS
     card.innerHTML = `
       <div class="pedido-header" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
         <span class="pedido-id" style="font-weight:bold;">#${p.id.substring(0,6).toUpperCase()} (${p.vendedor || 'Sem Nome'})</span>
@@ -350,7 +363,7 @@ function renderPedidosExp() {
           </select>
         </div>
       </div>
-      <div class="pedido-body" style="margin-top:10px;">
+      <div class="pedido-card-conteudo" style="margin-top:10px;">
         <p><strong>Cliente:</strong> ${p.cliente || ''}</p>
         <p><strong>Destino:</strong> ${p.cidade || ''} - ${p.estado || ''}</p>
         <div class="pedido-itens-list" style="background: rgba(255,255,255,0.5); padding:8px; border-radius:8px; margin-top:8px;">
@@ -513,7 +526,7 @@ if (typeof window !== "undefined") {
 
           await enviarPushOneSignal("identificador", "expedicao", "✏️ Pedido Alterado!", `O pedido de ${cliente} foi modificado por ${session.nome}.`);
           resetForm();
-          alert("Pedido atualizado com sucesso e retornado para Fila!");
+          alert("Pedido updated com sucesso e retornado para Fila!");
         } catch(err) { console.error(err); }
 
       } else {
