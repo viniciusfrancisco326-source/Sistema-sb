@@ -29,50 +29,45 @@ const ONESIGNAL_REST_KEY = "grrf5hsueuanuuuscnyrmaisd";
 
 let session = null;
 let databasePedidos = new Map();
-let composerBlocks = [{ modeloCodigo: "001", descricao: "" }];
+let composerBlocks = [{ modeloCodigo: "", descricao: "" }]; // Inicializa vazio para digitação livre
 
 function $(id) { return document.getElementById(id); }
 
 // ==========================================
-// PROGRAMAÇÃO DAS NOTIFICAÇÕES (ONESIGNAL V16)
+// NOTIFICAÇÕES CORRIGIDAS (ONESIGNAL V16)
 // ==========================================
 
 async function vincularUsuarioOneSignal() {
   if (!session) return;
   try {
-    if (session.perfil === "dono") {
-      await OneSignal.User.addTag("identificador", `dono_${session.nome}`);
-      console.log(`[OneSignal] Tag configurada: identificador = dono_${session.nome}`);
-    } else {
-      await OneSignal.User.addTag("identificador", "expedicao");
-      console.log(`[OneSignal] Tag configurada: identificador = expedicao`);
+    if (typeof OneSignal !== "undefined") {
+      if (session.perfil === "dono") {
+        await OneSignal.User.addTag("identificador", `dono_${session.nome}`);
+        console.log(`[OneSignal] Tag configurada: dono_${session.nome}`);
+      } else {
+        await OneSignal.User.addTag("identificador", "expedicao");
+        console.log(`[OneSignal] Tag configurada: expedicao`);
+      }
     }
-  } catch (e) { 
-    console.error("[OneSignal Tag Error]", e); 
-  }
+  } catch (e) { console.error("[OneSignal Tag Error]", e); }
 }
 
 async function ativarNotificacoes() {
   try {
-    if (!window.OneSignal || !OneSignal.Notifications.isPushSupported()) {
-      alert("Este navegador não possui suporte a Notificações Push.");
+    if (typeof OneSignal === "undefined") {
+      alert("Aguarde o carregamento do sistema de notificações e tente novamente.");
       return;
     }
-
+    
+    // Força checagem limpa de permissão para evitar o travamento de AppID incorreto do cache
     if (OneSignal.Notifications.permission === "granted") {
       await vincularUsuarioOneSignal();
       alert("✅ Tudo certo! As notificações já estão ativadas para este aparelho.");
       return;
     }
 
-    if (OneSignal.Notifications.permission === "denied") {
-      alert("❌ Notificações bloqueadas! Clique no cadeado perto da URL, mude para 'Permitir' e recarregue.");
-      return;
-    }
-
     await OneSignal.Slidedown.promptPush();
     await vincularUsuarioOneSignal();
-    
   } catch (e) {
     console.error("[OneSignal SDK Error]", e);
   }
@@ -87,9 +82,7 @@ async function enviarPushOneSignal(chaveTag, valorTag, titulo, message) {
       app_id: ONESIGNAL_APP_ID,
       headings: { "en": titulo, "pt": titulo },
       contents: { "en": message, "pt": message },
-      filters: [
-        { "field": "tag", "key": chaveTag, "relation": "=", "value": valorTag }
-      ]
+      filters: [{ "field": "tag", "key": chaveTag, "relation": "=", "value": valorTag }]
     };
 
     let response;
@@ -113,16 +106,13 @@ async function enviarPushOneSignal(chaveTag, valorTag, titulo, message) {
         body: JSON.stringify(payload)
       });
     }
-
     const resultado = await response.json();
     console.log("[OneSignal API Response]", resultado);
-  } catch (error) {
-    console.error("[Push Exception]", error);
-  }
+  } catch (error) { console.error("[Push Exception]", error); }
 }
 
 // ==========================================
-// CORE DO SISTEMA E EXIBIÇÕES
+// CORE DO SISTEMA (CONVERSÃO DE DADOS NATAL DO FIREBASE)
 // ==========================================
 
 function getLocalDateTime() {
@@ -148,7 +138,7 @@ function showLogin() {
   $("loginScreen").style.display = "flex";
   $("dashboardDono").style.display = "none";
   $("dashboardExpedicao").style.display = "none";
-  mudarCamposPerfil(); // Garante o alinhamento visual dos campos ao abrir
+  mudarCamposPerfil();
 }
 
 function showDashboard() {
@@ -163,20 +153,17 @@ function showDashboard() {
     $("dashboardExpedicao").style.display = "block";
     renderPedidosExp();
   }
-  if (window.OneSignal && OneSignal.Notifications.permission === "granted") {
+  if (typeof OneSignal !== "undefined" && OneSignal.Notifications.permission === "granted") {
     vincularUsuarioOneSignal();
   }
 }
 
 function mudarCamposPerfil() {
   const perfil = $("perfilLogin").value;
-  if (perfil === "dono") {
-    $("boxSelecionarNome").style.display = "block";
-  } else {
-    $("boxSelecionarNome").style.display = "none";
-  }
+  $("boxSelecionarNome").style.display = (perfil === "dono") ? "block" : "none";
 }
 
+// FORMATO COM CAMPO EM BRANCO PARA DIGITAÇÃO LIVRE DO MODELO
 function renderPedidoComposer() {
   const container = $("pedidoComposerBlocks");
   container.innerHTML = "";
@@ -184,19 +171,8 @@ function renderPedidoComposer() {
     const row = document.createElement("div");
     row.className = "composer-row";
     row.innerHTML = `
-      <div class="field" style="width: 140px;">
-        <select class="select-modelo" data-index="${index}">
-          <option value="001" ${block.modeloCodigo === "001" ? "selected" : ""}>MODELO 001</option>
-          <option value="002" ${block.modeloCodigo === "002" ? "selected" : ""}>MODELO 002</option>
-          <option value="003" ${block.modeloCodigo === "003" ? "selected" : ""}>MODELO 003</option>
-          <option value="004" ${block.modeloCodigo === "004" ? "selected" : ""}>MODELO 004</option>
-          <option value="005" ${block.modeloCodigo === "005" ? "selected" : ""}>MODELO 005</option>
-          <option value="006" ${block.modeloCodigo === "006" ? "selected" : ""}>MODELO 006</option>
-          <option value="007" ${block.modeloCodigo === "007" ? "selected" : ""}>MODELO 007</option>
-          <option value="008" ${block.modeloCodigo === "008" ? "selected" : ""}>MODELO 008</option>
-          <option value="009" ${block.modeloCodigo === "009" ? "selected" : ""}>MODELO 009</option>
-          <option value="010" ${block.modeloCodigo === "010" ? "selected" : ""}>MODELO 010</option>
-        </select>
+      <div class="field" style="width: 160px;">
+        <input type="text" class="input-modelo" placeholder="Modelo (Ex: 001)" value="${block.modeloCodigo}" data-index="${index}">
       </div>
       <div class="field flex-1">
         <input type="text" class="input-desc" placeholder="Ex: 5 P, 10 M, 5 G cor azul" value="${block.descricao}" data-index="${index}">
@@ -206,8 +182,8 @@ function renderPedidoComposer() {
     container.appendChild(row);
   });
 
-  document.querySelectorAll(".select-modelo").forEach(el => {
-    el.addEventListener("change", (e) => {
+  document.querySelectorAll(".input-modelo").forEach(el => {
+    el.addEventListener("input", (e) => {
       const idx = parseInt(e.target.getAttribute("data-index"));
       composerBlocks[idx].modeloCodigo = e.target.value;
     });
@@ -229,6 +205,21 @@ function renderPedidoComposer() {
   });
 }
 
+// CORRIGIDO: MONTA AS PEÇAS NO COMPORTAMENTO NATIVO DO HISTÓRICO DO FIREBASE
+function extrairDetalhesDoPedido(p) {
+  let HTML = "";
+  if (Array.isArray(p.itens)) {
+    p.itens.forEach(it => {
+      if(it.modeloCodigo || it.descricao) {
+        HTML += `<div class="item-badge"><strong>${it.modeloCodigo || 'Modelo'}:</strong> ${it.descricao || ''}</div>`;
+      }
+    });
+  } else if (p.modeloCodigo || p.descricao) {
+    HTML += `<div class="item-badge"><strong>${p.modeloCodigo || 'Modelo'}:</strong> ${p.descricao || ''}</div>`;
+  }
+  return HTML || `<div class="item-badge" style="color:red;">Sem detalhes cadastrados</div>`;
+}
+
 function renderPedidosDono() {
   if (!session) return;
   const container = $("listaPedidosDono");
@@ -245,12 +236,6 @@ function renderPedidosDono() {
   lista.forEach(p => {
     const card = document.createElement("div");
     card.className = `pedido-card status-${p.status}`;
-    let itensHtml = "";
-    if (Array.isArray(p.itens)) {
-      p.itens.forEach(it => {
-        itensHtml += `<div class="item-badge"><strong>Mod. ${it.modeloCodigo}:</strong> ${it.descricao}</div>`;
-      });
-    }
     card.innerHTML = `
       <div class="pedido-header">
         <span class="pedido-id">#${p.id.substring(0,6).toUpperCase()}</span>
@@ -259,9 +244,9 @@ function renderPedidosDono() {
       <div class="pedido-body">
         <p><strong>Cliente:</strong> ${p.cliente}</p>
         <p><strong>Destino:</strong> ${p.cidade} - ${p.estado}</p>
-        <div class="pedido-itens-list">${itensHtml}</div>
+        <div class="pedido-itens-list">${extrairDetalhesDoPedido(p)}</div>
         ${p.obs ? `<p class="obs-text"><strong>Obs:</strong> ${p.obs}</p>` : ""}
-        ${p.motivoFalta ? `<div class="alteracao-aviso-box">⚠️ <strong>Aviso da Expedição:</strong> ${p.motivoFalta}</div>` : ""}
+        ${p.motivoFalta ? `<div class="alteracao-aviso-box">⚠️ <strong>Falta:</strong> ${p.motivoFalta}</div>` : ""}
       </div>
       <div class="pedido-footer">
         <span>Enviado em: ${p.createdDate} às ${p.createdTime}</span>
@@ -307,12 +292,12 @@ function renderPedidosExp() {
   lista.forEach(p => {
     const card = document.createElement("div");
     card.className = `pedido-card status-${p.status}`;
-    let itensHtml = "";
-    if (Array.isArray(p.itens)) {
-      p.itens.forEach(it => {
-        itensHtml += `<div class="item-badge"><strong>Mod. ${it.modeloCodigo}:</strong> ${it.descricao}</div>`;
-      });
-    }
+    
+    // REGRA SOLICITADA: O botão de excluir só aparece se o status for "separado"
+    const botaoExcluirHtml = (p.status === "separado") 
+      ? `<button class="btn-delete-pedido" data-id="${p.id}" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:700;">Excluir</button>`
+      : `<span style="font-size:11px; color:var(--muted);">Exclusão Bloqueada (Não Separado)</span>`;
+
     card.innerHTML = `
       <div class="pedido-header">
         <span class="pedido-id">#${p.id.substring(0,6).toUpperCase()} (${p.vendedor})</span>
@@ -329,7 +314,7 @@ function renderPedidosExp() {
       <div class="pedido-body">
         <p><strong>Cliente:</strong> ${p.cliente}</p>
         <p><strong>Destino:</strong> ${p.cidade} - ${p.estado}</p>
-        <div class="pedido-itens-list">${itensHtml}</div>
+        <div class="pedido-itens-list">${extrairDetalhesDoPedido(p)}</div>
         ${p.obs ? `<p class="obs-text"><strong>Obs:</strong> ${p.obs}</p>` : ""}
         <div class="falta-peca-box" id="boxFalta_${p.id}" style="display: ${p.status === "falta-peca" ? "block" : "none"}; margin-top: 10px;">
           <input type="text" id="inputFalta_${p.id}" placeholder="Itens faltando..." value="${p.motivoFalta || ""}" style="padding: 8px; border-radius: 8px; border: 1px solid var(--line); width: 80%; font-size:13px;">
@@ -338,7 +323,7 @@ function renderPedidosExp() {
       </div>
       <div class="pedido-footer">
         <span>Recebido em: ${p.createdDate} às ${p.createdTime}</span>
-        <button class="btn-delete-pedido" data-id="${p.id}" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:700;">Excluir</button>
+        ${botaoExcluirHtml}
       </div>
     `;
     container.appendChild(card);
@@ -385,8 +370,13 @@ function renderPedidosExp() {
 
   document.querySelectorAll(".btn-delete-pedido").forEach(el => {
     el.addEventListener("click", async (e) => {
-      if (confirm("Deseja apagar este pedido?")) {
-        const id = e.target.getAttribute("data-id");
+      const id = e.target.getAttribute("data-id");
+      const ped = databasePedidos.get(id);
+      if (ped && ped.status !== "separado") {
+        alert("Ação negada! Apenas pedidos com status 'Separado' podem ser excluídos.");
+        return;
+      }
+      if (confirm("Deseja apagar este pedido concluído?")) {
         try { await deleteDoc(doc(db, "pedidos", id)); } catch (err) { console.error(err); }
       }
     });
@@ -394,7 +384,7 @@ function renderPedidosExp() {
 }
 
 // ==========================================
-// EVENTOS E INTERAÇÃO DE LOGIN
+// EVENTOS E INTERAÇÃO
 // ==========================================
 
 if (typeof window !== "undefined") {
@@ -405,15 +395,13 @@ if (typeof window !== "undefined") {
     $("perfilLogin").addEventListener("change", mudarCamposPerfil);
 
     $("btnAddModelRow").addEventListener("click", () => {
-      composerBlocks.push({ modeloCodigo: "001", descricao: "" });
+      composerBlocks.push({ modeloCodigo: "", descricao: "" });
       renderPedidoComposer();
     });
 
     $("btnEntrar").addEventListener("click", () => {
       const perfil = $("perfilLogin").value;
-      // Se for dono, pega do seletor. Se for expedição, o nome padrão é "Expedição"
       const nome = (perfil === "dono") ? $("nomeVendedorSelect").value : "Expedição";
-
       session = { nome, perfil };
       localStorage.setItem(SESSION_KEY, JSON.stringify(session));
       showDashboard();
@@ -439,7 +427,7 @@ if (typeof window !== "undefined") {
       const obs = $("obsPedido").value.trim();
 
       if (!cliente || !city) { alert("Preencha o Nome do Cliente e a Cidade."); return; }
-      if (!composerBlocks.some(b => b.descricao.trim() !== "")) { alert("Preencha a descrição de pelo menos um modelo."); return; }
+      if (!composerBlocks.some(b => b.descricao.trim() !== "")) { alert("Preencha as especificações de peças do pedido."); return; }
 
       const localDateTime = getLocalDateTime();
       try {
@@ -451,15 +439,16 @@ if (typeof window !== "undefined") {
         });
         await enviarPushOneSignal("identificador", "expedicao", "📦 Novo pedido recebido!", `De ${session.nome} para ${cliente}.`);
         $("cliente").value = ""; $("cidade").value = ""; $("obsPedido").value = "";
-        composerBlocks = [{ modeloCodigo: "001", descricao: "" }]; 
+        composerBlocks = [{ modeloCodigo: "", descricao: "" }]; 
         renderPedidoComposer();
         alert("Pedido enviado com sucesso!");
       } catch (err) { console.error(err); }
     });
 
+    // SOLICITADO: Preencher Exemplo agora traz por padrão o "001 - Reforçado Liso"
     $("btnExemplo").addEventListener("click", () => {
       $("cliente").value = "Loja Exemplo"; $("cidade").value = "Fortaleza";
-      composerBlocks = [{ modeloCodigo: "001", descricao: "10 P preto, 10 M rosa" }]; 
+      composerBlocks = [{ modeloCodigo: "001 - Reforçado Liso", descricao: "10 P preto, 10 M rosa" }]; 
       renderPedidoComposer();
     });
 
