@@ -179,16 +179,27 @@ function renderPedidoComposer() {
 
 function extrairDetalhesDoPedido(p) {
   let HTML = "";
+  
+  // 1. Se veio do formato novo estruturado em array
   if (Array.isArray(p.itens) && p.itens.length > 0) {
     p.itens.forEach(it => {
       if(it.modeloCodigo || it.descricao) {
-        HTML += `<div class="item-badge" style="background:#fff; border:1px solid #e5e7eb; padding:6px; border-radius:8px; margin-bottom:4px; font-size:13px;"><strong>Mod. ${it.modeloCodigo || 'Não informado'}:</strong> ${it.descricao || ''}</div>`;
+        HTML += `<div class="item-badge" style="background:#fff; border:1px solid #e5e7eb; padding:6px; border-radius:8px; margin-bottom:4px; font-size:13px; color:#1f2430 !important;"><strong>Mod. ${it.modeloCodigo || 'Não informado'}:</strong> ${it.descricao || ''}</div>`;
       }
     });
-  } else if (p.modeloCodigo || p.descricao) {
-    HTML += `<div class="item-badge" style="background:#fff; border:1px solid #e5e7eb; padding:6px; border-radius:8px; margin-bottom:4px; font-size:13px;"><strong>Mod. ${p.modeloCodigo || 'Não informado'}:</strong> ${p.descricao || ''}</div>`;
+  } 
+  
+  // 2. Se veio do formato plano nativo do Firebase antigo
+  if (p.modeloCodigo || p.descricao) {
+    HTML += `<div class="item-badge" style="background:#fff; border:1px solid #e5e7eb; padding:6px; border-radius:8px; margin-bottom:4px; font-size:13px; color:#1f2430 !important;"><strong>Mod. ${p.modeloCodigo || 'Não informado'}:</strong> ${p.descricao || ''}</div>`;
   }
-  return HTML || `<div class="item-badge" style="color:#ef4444; font-weight:bold;">⚠️ Nenhum detalhe de peça registrado.</div>`;
+  
+  // 3. Segurança caso não encontre nenhuma propriedade válida
+  if (!HTML) {
+    HTML = `<div class="item-badge" style="color:#ef4444; font-weight:bold;">⚠️ Nenhum detalhe de peça registrado.</div>`;
+  }
+  
+  return HTML;
 }
 
 // INCLUSÃO DOS BOTÕES DE EDITAR E EXCLUIR NO HISTÓRICO DO DONO
