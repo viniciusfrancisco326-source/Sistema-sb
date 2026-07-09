@@ -27,8 +27,11 @@ const db = getFirestore(app);
 const pedidosRef = collection(db, "pedidos");
 
 const SESSION_KEY = "sistema_sou_bela_sessao_v15"; 
-// ⚠️ COMPROVE ESTE ID NO PAINEL DO ONESIGNAL (WEB PUSH APP ID)
-const ONESIGNAL_APP_ID = "000b8540-c342-4950-8ab0-797bbc3e7313"; 
+// ==========================================
+// CREDENCIAIS OFICIAIS DO ONESIGNAL
+// ==========================================
+const ONESIGNAL_APP_ID = "000b8540-c342-4450-8ab0-797bbc3e7313"; 
+const ONESIGNAL_REST_API_KEY = "grrf5hsueuanuuuscnyrmaisd"; 
 
 let session = null;
 let databasePedidos = new Map();
@@ -89,6 +92,7 @@ async function ativarNotificacoes() {
   }
 }
 
+// FUNÇÃO ATUALIZADA: Envia o push autenticado com a sua REST API Key
 async function enviarPushOneSignal(chaveTag, valorTag, titulo, message) {
   if (oneSignalSubmitedError) return;
   try {
@@ -99,12 +103,21 @@ async function enviarPushOneSignal(chaveTag, valorTag, titulo, message) {
       contents: { "en": message, "pt": message },
       filters: [{ "field": "tag", "key": chaveTag, "relation": "=", "value": valorTag }]
     };
-    fetch(urlOneSignal, {
+    
+    const resposta = await fetch(urlOneSignal, {
       method: "POST",
-      headers: { "Content-Type": "application/json; charset=utf-8" },
+      headers: { 
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": `Basic ${ONESIGNAL_REST_API_KEY}`
+      },
       body: JSON.stringify(payload)
-    }).catch(() => {});
-  } catch (error) { console.error(error); }
+    });
+    
+    const resultado = await resposta.json();
+    console.log("👉 Retorno do Envio OneSignal:", resultado);
+  } catch (error) { 
+    console.error("❌ Erro fatal ao tentar enviar push:", error); 
+  }
 }
 
 // ==========================================
@@ -129,14 +142,8 @@ function checkSession() {
   }
 }
 
-function showLogin() {
-  $("loginScreen").style.display = "flex";
-  $("dashboardDono").style.display = "none";
-  $("dashboardExpedicao").style.display = "none";
-  mudarCamposPerfil();
-}
-
-function showDashboard() {
+// Garante o vínculo das tags mesmo que o usuário faça login após o carregamento da página
+async function showDashboard() {
   $("loginScreen").style.display = "none";
   if (session.perfil === "dono") {
     $("dashboardDono").style.display = "block";
@@ -148,6 +155,15 @@ function showDashboard() {
     $("dashboardExpedicao").style.display = "block";
     renderPedidosExp();
   }
+  // Tenta sincronizar a tag do usuário assim que ele entra no Dashboard
+  setTimeout(vincularUsuarioOneSignal, 2000);
+}
+
+function showLogin() {
+  $("loginScreen").style.display = "flex";
+  $("dashboardDono").style.display = "none";
+  $("dashboardExpedicao").style.display = "none";
+  mudarCamposPerfil();
 }
 
 function mudarCamposPerfil() {
@@ -196,7 +212,6 @@ function renderPedidoComposer() {
   });
 }
 
-// CORREÇÃO DA LETRA INVISÍVEL (Preto nítido com #1f2430)
 function extrairDetalhesDoPedido(p) {
   let HTML = "";
   if (Array.isArray(p.itens) && p.itens.length > 0) {
@@ -236,7 +251,7 @@ function renderPedidosDono() {
       ? `<div class="editado-aviso-box">✏️ Editado por ${p.editadoPor} em ${p.editadoDate} às ${p.editadoTime}</div>` 
       : "";
 
-    // ALTERADO DE 'pedido-body' PARA 'pedido-card-conteudo' PARA NÃO COMPACTAR NO CSS
+    // Corrigido para 'pedido-card-conteudo' (ignora a quebra do CSS antigo)
     card.innerHTML = `
       <div class="pedido-header" style="display:flex; justify-content:space-between; align-items:center;">
         <span class="pedido-id">#${p.id.substring(0,6).toUpperCase()}</span>
@@ -263,7 +278,6 @@ function renderPedidosDono() {
     container.appendChild(card);
   });
 
-  // GATILHO EDITAR (Dono)
   document.querySelectorAll(".btn-edit-dono").forEach(el => {
     el.addEventListener("click", (e) => {
       const id = e.target.getAttribute("data-id");
@@ -290,7 +304,6 @@ function renderPedidosDono() {
     });
   });
 
-  // GATILHO EXCLUIR (Dono)
   document.querySelectorAll(".btn-delete-dono").forEach(el => {
     el.addEventListener("click", async (e) => {
       const id = e.target.getAttribute("data-id");
@@ -349,7 +362,7 @@ function renderPedidosExp() {
       ? `<div class="editado-aviso-box">✏️ Editado por ${p.editadoPor} em ${p.editadoDate} às ${p.editadoTime}</div>` 
       : "";
 
-    // ALTERADO DE 'pedido-body' PARA 'pedido-card-conteudo' PARA NÃO COMPACTAR NO CSS
+    // Corrigido para 'pedido-card-conteudo' (ignora a quebra do CSS antigo)
     card.innerHTML = `
       <div class="pedido-header" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
         <span class="pedido-id" style="font-weight:bold;">#${p.id.substring(0,6).toUpperCase()} (${p.vendedor || 'Sem Nome'})</span>
@@ -486,7 +499,6 @@ if (typeof window !== "undefined") {
       }
     }
 
-    // FORMULÁRIO: PROCESSAR NOVO OU SALVAR EDIÇÃO
     $("formNovoPedido").addEventListener("submit", async (e) => {
       e.preventDefault();
       if (!session) return;
@@ -506,13 +518,9 @@ if (typeof window !== "undefined") {
       const primeiroBloco = composerBlocks[0] || { modeloCodigo: "", descricao: "" };
 
       if (idExistente) {
-        // REGRA DE EDIÇÃO: Força o status de volta para Fila
         try {
           await updateDoc(doc(db, "pedidos", idExistente), {
-            cliente,
-            estado,
-            cidade: city,
-            obs,
+            cliente, estado, cidade: city, obs,
             status: "nao-visualizado",
             modeloCodigo: primeiroBloco.modeloCodigo,
             descricao: primeiroBloco.descricao,
@@ -526,11 +534,10 @@ if (typeof window !== "undefined") {
 
           await enviarPushOneSignal("identificador", "expedicao", "✏️ Pedido Alterado!", `O pedido de ${cliente} foi modificado por ${session.nome}.`);
           resetForm();
-          alert("Pedido updated com sucesso e retornado para Fila!");
+          alert("Pedido atualizado com sucesso e retornado para Fila!");
         } catch(err) { console.error(err); }
 
       } else {
-        // MODO NOVO PEDIDO NORMAL
         try {
           await addDoc(pedidosRef, {
             vendedor: session.nome, cliente, estado, cidade: city, obs,
