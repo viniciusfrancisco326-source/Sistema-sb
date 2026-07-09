@@ -10,6 +10,9 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+// ==========================================
+// CREDENCIAIS DO SEU FIREBASE
+// ==========================================
 const firebaseConfig = {
   apiKey: "AIzaSyCowmhL0Iy3R-dkyLy2uJG-HyHYbnQV3cY",
   authDomain: "sistema-sb-expedicao.firebaseapp.com",
@@ -32,7 +35,9 @@ let composerBlocks = [{ modeloCodigo: "", descricao: "" }];
 
 function $(id) { return document.getElementById(id); }
 
-// INITIALIZATION COM PROTEÇÃO CONTRA TRAVAMENTOS DE CACHE
+// ==========================================
+// INICIALIZAÇÃO COM ISOLAMENTO DE ERRO DO ONESIGNAL
+// ==========================================
 if (typeof window !== "undefined") {
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push(async function(OneSignal) {
@@ -44,7 +49,7 @@ if (typeof window !== "undefined") {
         serviceWorkerParam: { scope: "/Sistema-sb/" },
       });
     } catch(err) {
-      console.log("[OneSignal Bypassed] O erro de AppID foi isolado para evitar travar os botões.", err);
+      console.log("[OneSignal Bypassed] Erro de cache isolado com sucesso para não travar o site.", err);
     }
   });
 }
@@ -91,6 +96,9 @@ async function enviarPushOneSignal(chaveTag, valorTag, titulo, message) {
   } catch (error) { console.error(error); }
 }
 
+// ==========================================
+// LOGICA DE SESSÃO E AUXILIARES
+// ==========================================
 function getLocalDateTime() {
   const now = new Date();
   const offset = -3;
@@ -177,32 +185,24 @@ function renderPedidoComposer() {
   });
 }
 
+// CORREÇÃO DA LETRA INVISÍVEL (Preto nítido com #1f2430)
 function extrairDetalhesDoPedido(p) {
   let HTML = "";
-  
-  // 1. Se veio do formato novo estruturado em array
   if (Array.isArray(p.itens) && p.itens.length > 0) {
     p.itens.forEach(it => {
       if(it.modeloCodigo || it.descricao) {
         HTML += `<div class="item-badge" style="background:#fff; border:1px solid #e5e7eb; padding:6px; border-radius:8px; margin-bottom:4px; font-size:13px; color:#1f2430 !important;"><strong>Mod. ${it.modeloCodigo || 'Não informado'}:</strong> ${it.descricao || ''}</div>`;
       }
     });
-  } 
-  
-  // 2. Se veio do formato plano nativo do Firebase antigo
-  if (p.modeloCodigo || p.descricao) {
+  } else if (p.modeloCodigo || p.descricao) {
     HTML += `<div class="item-badge" style="background:#fff; border:1px solid #e5e7eb; padding:6px; border-radius:8px; margin-bottom:4px; font-size:13px; color:#1f2430 !important;"><strong>Mod. ${p.modeloCodigo || 'Não informado'}:</strong> ${p.descricao || ''}</div>`;
   }
-  
-  // 3. Segurança caso não encontre nenhuma propriedade válida
-  if (!HTML) {
-    HTML = `<div class="item-badge" style="color:#ef4444; font-weight:bold;">⚠️ Nenhum detalhe de peça registrado.</div>`;
-  }
-  
-  return HTML;
+  return HTML || `<div class="item-badge" style="color:#ef4444; font-weight:bold;">⚠️ Nenhum detalhe de peça registrado.</div>`;
 }
 
-// INCLUSÃO DOS BOTÕES DE EDITAR E EXCLUIR NO HISTÓRICO DO DONO
+// ==========================================
+// RENDERIZAÇÃO: PAINEL DO DONO / VENDEDOR
+// ==========================================
 function renderPedidosDono() {
   if (!session) return;
   const container = $("listaPedidosDono");
@@ -251,7 +251,7 @@ function renderPedidosDono() {
     container.appendChild(card);
   });
 
-  // GATILHO DO BOTÃO EDITAR DO DONO
+  // GATILHO EDITAR (Dono)
   document.querySelectorAll(".btn-edit-dono").forEach(el => {
     el.addEventListener("click", (e) => {
       const id = e.target.getAttribute("data-id");
@@ -278,7 +278,7 @@ function renderPedidosDono() {
     });
   });
 
-  // GATILHO DO BOTÃO EXCLUIR DO DONO
+  // GATILHO EXCLUIR (Dono)
   document.querySelectorAll(".btn-delete-dono").forEach(el => {
     el.addEventListener("click", async (e) => {
       const id = e.target.getAttribute("data-id");
@@ -289,6 +289,9 @@ function renderPedidosDono() {
   });
 }
 
+// ==========================================
+// RENDERIZAÇÃO: SETOR DE EXPEDIÇÃO
+// ==========================================
 function renderPedidosExp() {
   if (!session) return;
   const container = $("listaPedidosExp");
@@ -434,6 +437,9 @@ function resetForm() {
   renderPedidoComposer();
 }
 
+// ==========================================
+// CAPTURA DOS EVENTOS DO DOM
+// ==========================================
 if (typeof window !== "undefined") {
   window.addEventListener("DOMContentLoaded", () => {
     checkSession();
@@ -467,7 +473,7 @@ if (typeof window !== "undefined") {
       }
     }
 
-    // INTERAÇÃO COMPLETA DE CRIAÇÃO / EDIÇÃO DE PEDIDOS
+    // FORMULÁRIO: PROCESSAR NOVO OU SALVAR EDIÇÃO
     $("formNovoPedido").addEventListener("submit", async (e) => {
       e.preventDefault();
       if (!session) return;
@@ -487,19 +493,14 @@ if (typeof window !== "undefined") {
       const primeiroBloco = composerBlocks[0] || { modeloCodigo: "", descricao: "" };
 
       if (idExistente) {
-        // MODO EDIÇÃO
+        // REGRA DE EDIÇÃO: Força o status de volta para Fila
         try {
-          const pedidoOriginal = databasePedidos.get(idExistente);
-          
-          // REGRA SOLICITADA: Se o status original for diferente de nao-visualizado, reseta para nao-visualizado
-          let novoStatus = "nao-visualizado";
-
           await updateDoc(doc(db, "pedidos", idExistente), {
             cliente,
             estado,
             cidade: city,
             obs,
-            status: novoStatus,
+            status: "nao-visualizado",
             modeloCodigo: primeiroBloco.modeloCodigo,
             descricao: primeiroBloco.descricao,
             itens: composerBlocks,
@@ -512,11 +513,11 @@ if (typeof window !== "undefined") {
 
           await enviarPushOneSignal("identificador", "expedicao", "✏️ Pedido Alterado!", `O pedido de ${cliente} foi modificado por ${session.nome}.`);
           resetForm();
-          alert("Pedido atualizado com sucesso e status retornado para Fila!");
+          alert("Pedido atualizado com sucesso e retornado para Fila!");
         } catch(err) { console.error(err); }
 
       } else {
-        // MODO NOVO PEDIDO
+        // MODO NOVO PEDIDO NORMAL
         try {
           await addDoc(pedidosRef, {
             vendedor: session.nome, cliente, estado, cidade: city, obs,
@@ -551,6 +552,7 @@ if (typeof window !== "undefined") {
   });
 }
 
+// OUVINTE EM TEMPO REAL DO BANCO
 onSnapshot(pedidosRef, (snapshot) => {
   const next = new Map();
   snapshot.forEach(d => next.set(d.id, { id: d.id, ...d.data() }));
